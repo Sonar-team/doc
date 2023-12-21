@@ -3,7 +3,8 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	//site: 'https://example.com',
+	site: 'https://Sonar-team.github.io',
+	base: '/doc',
 	integrations: [
 		starlight({
 			title: 'My Docs',
