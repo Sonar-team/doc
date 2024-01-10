@@ -7,16 +7,19 @@ export default defineConfig({
 	base: '/doc',
 	integrations: [
 		starlight({
-			title: 'My Docs',
+			title: 'Sonar',
+			logo: {
+				src: './src/assets/icon.png',
+			},
 			social: {
-				github: 'https://github.com/withastro/starlight',
+				github: 'https://github.com/Sonar-team',
 			},
 			sidebar: [
 				{
 					label: 'Guides',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', link: '/guides/example/' },
+						{ label: 'Télécharger Sonar', link: 'src/components/Downloads.astro' },
 					],
 				},
 				{
