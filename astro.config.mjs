@@ -19,7 +19,7 @@ export default defineConfig({
 					label: 'Guides',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Télécharger Sonar', link: 'src/components/Downloads.astro' },
+						{ label: 'Télécharger Sonar', link: '/guides/example/' },
 					],
 				},
 				{
