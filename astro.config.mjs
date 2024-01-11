@@ -9,7 +9,7 @@ export default defineConfig({
 		starlight({
 			title: 'Sonar',
 			logo: {
-				src: './src/assets/icon.png',
+				src: './src/assets/logo_sonar.png',
 			},
 			social: {
 				github: 'https://github.com/Sonar-team',

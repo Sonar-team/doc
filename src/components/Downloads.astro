@@ -2,100 +2,72 @@
 import { Icon, LinkCard, CardGrid } from "@astrojs/starlight/components";
 
 const data: { name: string; browser_download_url: string }[] = await fetch(
-  "https://api.github.com/repos/ahqsoftwares/tauri-ahq-store/releases/latest"
+  "https://api.github.com/repos/Sonar-team/Sonar_desktop_app/releases/latest"
 )
-  .then((data) => data.json())
-  .then((data) => data.assets)
-  .then((data) =>
-    data.filter(
-      ({ name }: { name: string }) =>
-        name.endsWith("en-US.msi") ||
-        name.includes("setup") ||
-        name.endsWith(".AppImage") ||
-        name.endsWith(".deb")
-    )
-  );
-
-const alpha: { name: string; browser_download_url: string }[] = await fetch(
-  "https://api.github.com/repos/ahqsoftwares/tauri-ahq-store/releases"
-)
-  .then((data) => data.json())
-  .then(async (data) => data[0])
-  .then(async (data) => data.assets)
-  .then((data) =>
-    data.filter(
-      ({ name }: { name: string }) =>
-        name.endsWith(".AppImage") || name.endsWith(".deb")
-    )
-  );
-
-console.log(alpha);
+.then((data) => data.json())
+.then((data) => data.assets)
+.then((data) =>
+  data.filter(
+    ({ name }: { name: string }) =>
+      name.endsWith(".AppImage") ||
+      name.endsWith(".deb") ||
+      name.includes("_x64-setup.exe") ||
+      name.endsWith("_x64.dmg") ||
+      name.endsWith("_x64_en-US.msi") ||
+      name.endsWith(".app.tar.gz")
+  )
+);
 ---
+  <>
+    <h2 style={{ display: "flex" }}>
+      <span style={{ marginLeft: "12px" }}>🖥️ Windows</span>
+    </h2>
+    <CardGrid>
+      <LinkCard
+        title="🚀 Windows Setup (.exe)"
+        description="Télécharger l'installateur pour Windows"
+        href={data.find(({ name }) => name.includes("_x64-setup.exe"))?.browser_download_url}
+      />
 
-<h2 style="display: flex;">
-  <Icon name="rocket" color="green" size="2rem" />
-  <span style="margin-left: 12px;">Windows</span>
-</h2>
-<CardGrid>
-  <LinkCard
-    title="🚀 Setup (.exe)"
-    description="Download the Setup that automates the install (recommended)"
-    href={data.find(({ name }) => name.includes("setup"))?.browser_download_url}
-  />
+      <LinkCard
+        title="💿 Windows MSI (.msi)"
+        description="Installer via MSI pour Windows (nécessite une post-installation en ligne)"
+        href={data.find(({ name }) => name.endsWith("_x64_en-US.msi"))?.browser_download_url}
+      />
+    </CardGrid>
 
-  <LinkCard
-    title="💿 (.msi)"
-    description="Install AHQ Store via offline MSI (requires online post-installation)"
-    href={data.find(({ name }) => name.includes(".msi"))?.browser_download_url}
-  />
-</CardGrid>
+    <h2 style={{ display: "flex" }}>
+      <span style={{ marginLeft: "12px" }}>🐧 Linux</span>
+    </h2>
+    <CardGrid>
+      <LinkCard
+        title="📦 Debian Binary (.deb)"
+        description="Binary pour Debian, Ubuntu, et autres distributions basées sur Debian"
+        href={data.find(({ name }) => name.endsWith(".deb"))?.browser_download_url}
+      />
 
-<h2 style="display: flex;">
-  <Icon name="rocket" color="green" size="2rem" />
-  <span style="margin-left: 12px;">Linux</span>
-</h2>
-<CardGrid>
-  <LinkCard
-    title="📦 Debian Binary (.deb)"
-    description="Debian, Ubuntu, Kali Linux & other  (recommended)"
-    href={data.find(({ name }) => name.endsWith(".AppImage"))
-      ?.browser_download_url}
-  />
+      <LinkCard
+        title="📀 Linux AppImage"
+        description="AppImage pour Linux"
+        href={data.find(({ name }) => name.endsWith(".AppImage"))?.browser_download_url}
+      />
+    </CardGrid>
 
-  <LinkCard
-    title="📀 Download AppImage"
-    description="Arch, Fedora & almost all other distros"
-    href={data.find(({ name }) => name.endsWith(".deb"))?.browser_download_url}
-  />
+    <h2 style={{ display: "flex" }}>
+      <span style={{ marginLeft: "12px" }}>🍏 MacOS</span>
+    </h2>
+    <CardGrid>
+      <LinkCard
+        title="🍏 MacOS (.dmg)"
+        description="Télécharger l'installateur pour MacOS"
+        href={data.find(({ name }) => name.endsWith("_x64.dmg"))?.browser_download_url}
+      />
 
-  <LinkCard
-    title="📦 Debian Binary (.deb; Alpha)"
-    description="Debian, Ubuntu, Kali Linux & other"
-    href={alpha.find(({ name }) => name.endsWith(".AppImage"))
-      ?.browser_download_url}
-  />
+      <LinkCard
+        title="📦 MacOS Tarball (.tar.gz)"
+        description="Tarball pour MacOS"
+        href={data.find(({ name }) => name.endsWith(".app.tar.gz"))?.browser_download_url}
+      />
+    </CardGrid>
+  </>
 
-  <LinkCard
-    title="📀 Download AppImage (Alpha)"
-    description="Arch, Fedora & almost all other distros"
-    href={alpha.find(({ name }) => name.endsWith(".deb"))?.browser_download_url}
-  />
-</CardGrid>
-
-<h2 style="display: flex;">
-  <Icon name="rocket" color="green" size="2rem" />
-  <span style="margin-left: 12px;">Mac OS</span>
-</h2>
-<CardGrid>
-  <LinkCard
-    title="🚀 Setup (.dmg)"
-    description="Download the Setup that automates the install (recommended)"
-    href={data.find(({ name }) => name.includes("setup"))?.browser_download_url}
-  />
-
-  <LinkCard
-    title="💿 (.msi)"
-    description="Install AHQ Store via offline MSI (requires online post-installation)"
-    href={data.find(({ name }) => name.includes(".msi"))?.browser_download_url}
-  />
-</CardGrid>
