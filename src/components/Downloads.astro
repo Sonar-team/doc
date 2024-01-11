@@ -38,13 +38,13 @@ console.log(alpha);
 </h2>
 <CardGrid>
   <LinkCard
-    title="🚀 Download Setup"
+    title="🚀 Setup (.exe)"
     description="Download the Setup that automates the install (recommended)"
     href={data.find(({ name }) => name.includes("setup"))?.browser_download_url}
   />
 
   <LinkCard
-    title="💿 Download MSI"
+    title="💿 (.msi)"
     description="Install AHQ Store via offline MSI (requires online post-installation)"
     href={data.find(({ name }) => name.includes(".msi"))?.browser_download_url}
   />
@@ -79,5 +79,23 @@ console.log(alpha);
     title="📀 Download AppImage (Alpha)"
     description="Arch, Fedora & almost all other distros"
     href={alpha.find(({ name }) => name.endsWith(".deb"))?.browser_download_url}
+  />
+</CardGrid>
+
+<h2 style="display: flex;">
+  <Icon name="rocket" color="green" size="2rem" />
+  <span style="margin-left: 12px;">Mac OS</span>
+</h2>
+<CardGrid>
+  <LinkCard
+    title="🚀 Setup (.dmg)"
+    description="Download the Setup that automates the install (recommended)"
+    href={data.find(({ name }) => name.includes("setup"))?.browser_download_url}
+  />
+
+  <LinkCard
+    title="💿 (.msi)"
+    description="Install AHQ Store via offline MSI (requires online post-installation)"
+    href={data.find(({ name }) => name.includes(".msi"))?.browser_download_url}
   />
 </CardGrid>
