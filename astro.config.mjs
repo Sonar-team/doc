@@ -19,7 +19,7 @@ export default defineConfig({
 					label: 'Guides',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Télécharger Sonar', link: '/doc/guides/example/' },
+						{ label: 'Guides', link: 'guides' },
 					],
 				},
 				{
