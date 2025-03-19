@@ -13,7 +13,8 @@ const data: { name: string; browser_download_url: string }[] = await fetch(
       name.endsWith(".deb") ||
       name.includes("_x64-setup.exe") ||
       name.endsWith("_x64.dmg") ||
-      name.endsWith("_x64_en-US.msi") ||
+      name.endsWith("_x64_fr-FR.msi") ||
+      name.endsWith(".rpm") ||
       name.endsWith(".app.tar.gz")
   )
 );
@@ -24,6 +25,11 @@ const data: { name: string; browser_download_url: string }[] = await fetch(
     </h2>
     <CardGrid>
       <LinkCard
+        title="👁️ Dépendance Npcap"
+        description="⚠️⚠️ Installation requise : Npcap est nécessaire ⚠️⚠️"
+        href="https://npcap.com/dist/npcap-1.81.exe"
+      />
+      <LinkCard
         title="🚀 Windows Setup (.exe)"
         description="Télécharger l'installateur pour Windows"
         href={data.find(({ name }) => name.includes("_x64-setup.exe"))?.browser_download_url}
@@ -32,7 +38,7 @@ const data: { name: string; browser_download_url: string }[] = await fetch(
       <LinkCard
         title="💿 Windows MSI (.msi)"
         description="Installer via MSI pour Windows (nécessite une post-installation en ligne)"
-        href={data.find(({ name }) => name.endsWith("_x64_en-US.msi"))?.browser_download_url}
+        href={data.find(({ name }) => name.endsWith("_x64_fr-FR.msi"))?.browser_download_url}
       />
     </CardGrid>
 
@@ -51,6 +57,11 @@ const data: { name: string; browser_download_url: string }[] = await fetch(
         description="AppImage pour Linux"
         href={data.find(({ name }) => name.endsWith(".AppImage"))?.browser_download_url}
       />
+      <LinkCard
+      title="🎩 Linux Binary(rpm)"
+      description="Binary pour fedora et autres distributions basées sur Red hat"
+      href={data.find(({ name }) => name.endsWith(".rpm"))?.browser_download_url}
+    />
     </CardGrid>
 
     <h2 style={{ display: "flex" }}>
