@@ -1,0 +1,439 @@
+---
+title: Comment capturer des paquets réseau en Rust avec Tauri
+description: Un guide de terrain, étape par étape, pour comprendre la construction d'une fonction de capture de paquets dans une application Tauri.
+---
+
+## Introduction
+
+Pour comprendre comment capturer des paquets réseau en Rust dans une application **Tauri**, je vais te montrer **mon cheminement complet** — depuis l’idée d’un simple compteur jusqu’à une sonde réseau robuste.
+
+Ce n’est pas juste un tutoriel. C’est un **journal technique**, une sorte de carnet de bord dans lequel chaque problème m’a permis d’apprendre quelque chose de nouveau : sur les threads, la gestion d’état, la communication UI/backend, ou les particularités de la crate `pcap`.
+
+---
+
+## 🛠 Étape 1 – Démarrer avec un compteur dans un thread
+
+Avant de capturer des paquets réseau, je veux **maîtriser le principe d’un thread Rust contrôlé par Tauri**. Voici une fonction très simple qui **lance un thread de comptage** :
+
+```rust
+use tauri::command;
+use std::time::Duration;
+use std::thread;
+
+/// Cette commande démarre un thread qui compte chaque seconde.
+#[command(async)]
+pub fn start_counter() {
+    thread::spawn(move || {
+        let mut count = 0;
+        loop {
+            count += 1;
+            println!("Compteur: {}", count);
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
+
+    println!("Thread de comptage lancé !");
+}
+```
+
+```mermaid
+---
+config:
+  theme: neo-dark
+  look: classic
+---
+flowchart TD
+    Start["start_counter() appelée"] --> ThreadStart["Spawn du thread"]
+    ThreadStart --> Loop["Boucle infinie"]
+    Loop --> Incr["Incrémenter compteur"]
+    Incr --> Print["Afficher avec println!"]
+    Print --> Wait["Dormir 1 seconde"]
+    Wait --> Loop
+```
+
+
+---
+
+## 🧩 Étape 2 – Ajouter le contrôle `start` / `stop` du thread
+
+### 🧠 Objectif
+Créer un **compteur Rust contrôlable** à travers des **commandes Tauri** :
+- ✅ Démarrer le thread avec `start_counter`
+- ✅ L’arrêter proprement avec `stop_counter`
+
+---
+
+### 📦 Architecture du code
+
+#### 🧱 Backend (Rust)
+
+Tu introduis :
+- une structure globale `AppState` partagée dans un `Arc<Mutex<...>>`
+- un `CounterHandle` qui possède un `stop_flag` partagé entre thread et handler
+- deux commandes Tauri :
+  - `start_counter` qui vérifie qu’il n’y a pas de thread déjà actif
+  - `stop_counter` qui signale au thread qu’il doit s’arrêter
+
+#### 💡 Extrait clé
+
+```rust
+pub fn stop(&self) {
+    self.stop_flag.store(true, Ordering::Relaxed);
+}
+```
+
+➡️ Cela coupe la boucle du thread dans `while !stop_flag.load(...)`.
+
+---
+
+### 🔂 Boucle de capture avec interruption
+
+```rust
+thread::spawn(move || {
+    let mut count = 0;
+    while !stop_flag.load(Ordering::Relaxed) {
+        count += 1;
+        println!("Compteur: {}", count);
+        thread::sleep(Duration::from_secs(1));
+    }
+    println!("Thread terminé.");
+});
+```
+
+---
+
+### 🧠 Pourquoi `Arc<AtomicBool>` ?
+- **`Arc`** permet de **partager la donnée entre le thread et l'extérieur** (via le `CounterHandle`)
+- **`AtomicBool`** évite les verrous pour un flag booléen simple
+- `Ordering::Relaxed` est suffisant ici : pas besoin de synchronisation complexe
+
+---
+
+### 🔗 Intégration avec Tauri
+
+#### Commande `start_counter`
+
+```rust
+if app.counter.is_some() {
+    println!("Déjà en cours.");
+    return;
+}
+```
+
+➡️ Tu empêches le démarrage de plusieurs threads (bonne pratique).
+
+#### Commande `stop_counter`
+
+```rust
+if let Some(counter) = app.counter.take() {
+    counter.stop();
+}
+```
+
+➡️ Tu "consommes" le compteur en le retirant de l'état global (`take()`).
+
+---
+
+### 📊 Diagramme de séquence
+
+```mermaid
+flowchart TD
+    UI["UI (Vue.js)"]
+    start[/"start_counter"/]
+    stop[/"stop_counter"/]
+    checkFlag{{"stop_flag.load() == false ?"}}
+    threadStart(["thread::spawn"])
+    count[/"count += 1; sleep(1s)"/]
+    endThread["Thread terminé"]
+
+    UI --> start
+    start --> threadStart
+    threadStart --> checkFlag
+    subgraph     _____Loop
+    checkFlag -- true --> count
+    count --> checkFlag
+    end
+    checkFlag -- false --> endThread
+    UI --> stop --> endThread
+
+```
+
+---
+
+## 🧠 Résultat de cette étape
+
+- ✅ Tu contrôles **le lancement et l’arrêt** du thread à volonté.
+- ✅ Tu gères **un seul thread actif à la fois**.
+- ✅ Tu poses les bases pour les étapes suivantes : `pause`, `resume`, puis `pcap`.
+
+---
+
+## 📁 Étape 3 – Ajout de `pause` et `resume` avec `Condvar`
+
+### 🌟 Objectif
+Contrôler l'état d'exécution d'un thread via une **pause réversible**, sans tuer le thread, pour préparer les futurs cas d'usage comme la capture réseau avec interruption temporaire.
+
+---
+
+### 📄 Description technique
+
+Tu introduis ici un **mécanisme de pause/reprise** avec :
+
+- Un `Arc<(Mutex<bool>, Condvar)>` appelé `pause_flag`
+- Le thread se met en attente (`Condvar::wait`) tant que `pause_flag == true`
+- Une fonction `pause()` qui met `true`
+- Une fonction `resume()` qui met `false` et `notify_all()`
+
+---
+
+### 🛠️ Architecture de la boucle
+
+```rust
+while !stop_flag.load(Ordering::Relaxed) {
+    let (lock, cvar) = &*pause_flag;
+    let mut paused = lock.lock().unwrap();
+
+    if *paused {
+        println!("[DEBUG] Le thread est en pause, en attente...");
+    }
+
+    while *paused {
+        paused = cvar.wait(paused).unwrap();
+        println!("[DEBUG] Signal de reprise reçu");
+    }
+
+    drop(paused);
+
+    count += 1;
+    println!("Compteur: {}", count);
+    thread::sleep(Duration::from_secs(1));
+}
+```
+
+---
+
+### 🔊 Fonctionnement en flowchart
+
+```mermaid
+flowchart TD
+    Start["start() appelé"] --> ThreadStart["spawn du thread"]
+    ThreadStart --> Loop["Boucle: !stop_flag"]
+    subgraph thread while
+    Loop --> CheckPause{"pause_flag == true ?"}
+    CheckPause -- Non --> Count["count += 1; sleep"]
+    Count --> Loop
+    end
+    CheckPause -- Oui --> Wait["Condvar::wait"]
+    Wait --> Resume["Reprise: notify_all"]
+    Resume --> Loop
+    Stop["stop() appelé"] --> End["stop_flag = true"] --> Loop
+```
+
+---
+
+### 🔗 Pourquoi `Condvar` ici ?
+
+- Permet de bloquer le thread efficacement (**pas de spin/sleep inutile**)
+- Attente conditionnelle, sans gaspiller de CPU
+- Synchronisation typique dans les threads bloquants
+
+---
+
+### 📊 Bilan de l'étape
+
+| Fonction | Rôle |
+|----------|------|
+| `start()` | Lance le thread si pas déjà actif |
+| `stop()` | Coupe la boucle et réveille s'il était en pause |
+| `pause()` | Met le thread en attente |
+| `resume()` | Réveille le thread bloqué |
+
+---
+
+### 📉 Limites observées
+
+- Si on ne veut **pas bloquer** le thread (ex : avec `pcap` en mode `nonblock`), ce modèle est **trop complexe**
+- Risques de **deadlock** ou de **signal perdu** si mal utilisé
+
+**✅ C'est pour cette raison qu'à l'étape suivante, tu as décidé d'abandonner `Condvar` au profit d'un simple `AtomicBool`.**
+
+---
+
+## 📊 Etape 4 — Intégration de `pcap` avec pause/reprise
+
+### 🚀 Objectif
+Passer du compteur simple à une vraie capture de paquets réseau via la crate [`pcap`](https://docs.rs/pcap), tout en gardant la possibilité de mettre la capture **en pause** ou de l'arrêter grâce à des flags de contrôle partagés avec le thread de capture.
+
+---
+
+### 🔧 Code clé : struct `CaptureHandle`
+
+```rust
+pub struct CaptureHandle {
+    stop_flag: Arc<AtomicBool>,
+    pause_flag: Arc<(Mutex<bool>, Condvar)>,
+}
+```
+
+- `stop_flag` : permet d'interrompre la boucle de capture
+- `pause_flag` : permet de suspendre temporairement le thread sans le tuer
+
+---
+
+### 🪨 Logique de la boucle de capture
+
+```rust
+while !stop_flag.load(Ordering::Relaxed) {
+    // pause si activée
+    let (lock, cvar) = &*pause_flag;
+    let mut paused = lock.lock().unwrap();
+    while *paused {
+        println!("[DEBUG] Pause active, en attente...");
+        paused = cvar.wait(paused).unwrap();
+        println!("[DEBUG] Reprise de la capture");
+    }
+    drop(paused);
+
+    match cap.next_packet() {
+        Ok(packet) => println!("[CAPTURE] paquet de {} octets", packet.data.len()),
+        Err(e) => println!("[ERROR] Erreur de capture : {:?}", e),
+    }
+
+    let stats = cap.stats().unwrap();
+    println!(
+        "Received: {}, dropped: {}, if_dropped: {}",
+        stats.received, stats.dropped, stats.if_dropped
+    );
+}
+```
+
+---
+
+### 🛀 Flowchart
+
+```mermaid
+flowchart TD
+    UI["UI Vue.js"] --> start["start(interface)"]
+    start --> Thread["thread::spawn"]
+    Thread --> Loop["while !stop_flag"]
+    Loop --> CheckPause{"pause_flag == true ?"}
+    CheckPause -- Non --> Capture["cap.next_packet()"]
+    Capture --> Stats["Affichage stats"]
+    Stats --> Loop
+    CheckPause -- Oui --> Wait["Condvar::wait"]
+    Wait --> Resume["Reprise"] --> Loop
+```
+
+---
+
+### ⚠️ Limites identifiées
+
+- `Condvar` peut bloquer le thread **alors que `pcap` supporte le mode non-bloquant**
+- La gestion des erreurs devient plus complexe si des signaux sont manqués (ex : `notify_all()` raté)
+- Ce modèle est plus adapté à des processus **CPU-bloquants** que à de la capture IO non-bloquante
+
+---
+
+### 📊 Conclusion
+
+Cette étape permet de valider la chaîne :
+- Contrôle de thread avec pause/reprise sur une vraie capture réseau
+- Intégration du `pcap::Capture` dans un thread
+- Premiers tests de robustesse via `stop()` et `resume()`
+
+❌ **Mais les limites du modèle avec `Condvar` se font sentir.**
+
+🚧 Prochaine étape : remplacer `Condvar` par un simple `AtomicBool` pour un modèle plus adapté au non-blocking.
+
+---
+## 🚀 Etape 5 — Remplacement de `Condvar` par `AtomicBool`
+
+### 🔄 Objectif
+Remplacer la pause/reprise basée sur `Condvar` par une solution plus simple et plus robuste avec **un `AtomicBool`**, mieux adapté à la capture réseau en mode **non-bloquant** (`setnonblock()`).
+
+---
+
+### 🔧 Architecture du `CaptureHandle`
+
+```rust
+pub struct CaptureHandle {
+    stop_flag: Arc<AtomicBool>,
+    pause_flag: Arc<AtomicBool>,
+}
+```
+
+- `stop_flag` : indique au thread de s'arrêter
+- `pause_flag` : contrôle le gel temporaire de la capture
+
+---
+
+### ⚖️ Pourquoi abandonner `Condvar`
+
+| `Condvar`                           | `AtomicBool`                          |
+|------------------------------------|---------------------------------------|
+| Bloque le thread                   | Polling actif mais contrôlé           |
+| Difficile à synchroniser avec `pcap` | Compatible avec `setnonblock()`        |
+| Risques de signal perdu            | Simplicité, aucun verrou requis       |
+
+---
+
+### ✅ Comportement de la boucle de capture
+
+```rust
+if pause_flag.load(Ordering::Relaxed) {
+    thread::sleep(Duration::from_millis(100));
+    continue;
+}
+```
+
+Cela permet au thread de rester réactif et non-bloquant tout en réduisant la charge CPU.
+
+---
+
+### 📊 Affichage intelligent des stats
+
+Un cache `last_stats` permet d'éviter d'afficher les statistiques en boucle :
+
+```rust
+if last_stats != Some(current) {
+    println!("[STATS] Received: {}, dropped: {}, if_dropped: {}", ...);
+    last_stats = Some(current);
+}
+```
+
+---
+
+### 🛀 Flowchart
+
+```mermaid
+flowchart TD
+    UI["UI Vue"] --> start["start(interface)"]
+    start --> thread["thread::spawn"]
+    thread --> loop["while !stop_flag"]
+    loop --> checkPause{"pause_flag ?"}
+    checkPause -- true --> wait["sleep(100ms)"] --> loop
+    checkPause -- false --> capture["cap.next_packet()"] --> stats
+    stats --> loop
+    UI --> pause --> setPause["pause_flag = true"]
+    UI --> resume --> clearPause["pause_flag = false"]
+    UI --> stop --> setStop["stop_flag = true"]
+```
+
+---
+
+### 🔍 Ce qu'on gagne
+
+- Simplicité de la logique de pause
+- Plus de compatibilité avec les captures `pcap` non bloquantes
+- Moins de complexité et de risque de bug
+
+---
+
+### 🎉 Tu as maintenant :
+
+- Un thread de capture **contrôlable en `start`, `stop`, `pause`, `resume`**
+- Une capture réseau **performante et robuste**
+- Un code propre, testable et cross-plateforme
+
+Prochaine étape : 📊 **envoyer les paquets à la UI ou les logguer intelligemment.**
+

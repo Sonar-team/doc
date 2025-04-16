@@ -1,9 +1,15 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
+import rehypeMermaid from 'rehype-mermaid';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://Sonar-team.github.io',
+
+	markdown: {
+		rehypePlugins: [rehypeMermaid], // <-- clé ici !
+	  },
+
 	base: '/doc',
 	integrations: [
 		starlight({
@@ -11,22 +17,30 @@ export default defineConfig({
 			logo: {
 				src: './src/assets/logo_sonar.png',
 			},
-			social: {
-				github: 'https://github.com/Sonar-team',
-			},
+			social: [
+				{
+					icon: "github",
+					label: "GitHub",
+				 	href: "https://github.com/withastro/starlight"
+				}
+			],
 			sidebar: [
 				{
 					label: 'Guides',
 					items: [
 						// Each item here is one entry in the navigation menu.
-						{ label: 'Guides', link: 'guides' },
+						{ label: 'Installation', link: 'guides/installation' },
 					],
 				},
 				{
-					label: 'Reference',
-					autogenerate: { directory: 'reference' },
+					label: 'Developpement',
+					items: [
+						// Each item here is one entry in the navigation menu.
+						{ label: 'Capture pcap', link: 'developpement/capture' },
+					],
 				},
 			],
 		}),
 	],
+
 });
