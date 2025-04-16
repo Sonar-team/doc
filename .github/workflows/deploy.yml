@@ -14,10 +14,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout your repository using git
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -33,19 +33,13 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
-      - name: Build Astro project
+      - name: Build Astro site
         run: pnpm run build
 
-      - name: Dummy step to force download of upload-artifact
+      - name: Upload static site to artifact
         uses: actions/upload-artifact@v3
         with:
-          name: dummy
-          path: README.md
-          if-no-files-found: ignore
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
+          name: github-pages
           path: ./dist
 
   deploy:
