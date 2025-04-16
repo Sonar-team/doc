@@ -1,10 +1,14 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Déclenchez le workflow chaque fois que vous poussez vers la branche `main`
+  # Vous utilisez un nom de branche différent ? Remplacez `main` par le nom de votre branche
   push:
-    branches: [main]
+    branches: [ main ]
+  # Vous permet d'exécuter ce workflow manuellement à partir de l'onglet Actions sur GitHub.
   workflow_dispatch:
 
+# Autoriser cette tâche à cloner le dépôt et à créer un déploiement de page
 permissions:
   contents: read
   pages: write
@@ -14,34 +18,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout your repository using git
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install, build, and upload your site
+        uses: withastro/action@v3
+        
         with:
-          node-version: 20
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: Build Astro site
-        run: pnpm run build
-
-      - name: Upload static site to artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: github-pages
-          path: ./dist
-
+            path: . # L'emplacement racine de votre projet Astro dans le dépôt. (facultatif)
+            node-version: 20
+            package-manager: pnpm@latest
+      
+  
   deploy:
     needs: build
     runs-on: ubuntu-latest
