@@ -39,6 +39,12 @@ jobs:
 
       - name: Build Astro project
         run: pnpm run build
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./dist
+
   
   deploy:
     needs: build
