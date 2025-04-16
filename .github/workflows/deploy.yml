@@ -1,14 +1,10 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Déclenchez le workflow chaque fois que vous poussez vers la branche `main`
-  # Vous utilisez un nom de branche différent ? Remplacez `main` par le nom de votre branche
   push:
-    branches: [ main ]
-  # Vous permet d'exécuter ce workflow manuellement à partir de l'onglet Actions sur GitHub.
+    branches: [main]
   workflow_dispatch:
 
-# Autoriser cette tâche à cloner le dépôt et à créer un déploiement de page
 permissions:
   contents: read
   pages: write
@@ -39,13 +35,19 @@ jobs:
 
       - name: Build Astro project
         run: pnpm run build
-        
+
+      - name: Dummy step to force download of upload-artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dummy
+          path: README.md
+          if-no-files-found: ignore
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: ./dist
 
-  
   deploy:
     needs: build
     runs-on: ubuntu-latest
