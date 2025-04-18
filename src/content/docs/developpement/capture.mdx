@@ -37,11 +37,6 @@ pub fn start_counter() {
 ```
 
 ```mermaid
----
-config:
-  theme: neo-dark
-  look: classic
----
 flowchart TD
     Start["start_counter() appelée"] --> ThreadStart["Spawn du thread"]
     ThreadStart --> Loop["Boucle infinie"]
@@ -435,5 +430,118 @@ flowchart TD
 - Une capture réseau **performante et robuste**
 - Un code propre, testable et cross-plateforme
 
-Prochaine étape : 📊 **envoyer les paquets à la UI ou les logguer intelligemment.**
+Prochaine étape : 📊 **Séparer complètement la capture des paquets et leur traitement **
+
+
+## 🧠 Étape 6 — Thread séparé pour traitement + stats
+
+### 🎯 Objectif
+
+Séparer complètement la **capture** des paquets et leur **traitement** (parse, stats, etc.) dans deux threads indépendants.
+
+---
+
+### 📦 Architecture
+
+- Un `CaptureHandle` avec deux flags : `stop_flag` et `pause_flag`
+- Un thread de **capture** qui lit les paquets via `pcap` et les envoie dans un canal
+- Un thread de **traitement** qui lit depuis ce canal, décode les paquets, met à jour les compteurs et affiche les stats
+- Un enum `CaptureMessage` pour transmettre soit un paquet, soit les statistiques `pcap::Stat`
+
+---
+
+### 📄 Enum pour messages
+
+```rust
+enum CaptureMessage {
+    Packet(PacketOwned),
+    Stats(Stat),
+}
+```
+
+---
+
+### 📄 Thread de capture
+
+```rust
+thread::spawn(move || {
+    // boucle de capture pcap
+    match cap.next_packet() {
+        Ok(packet) => {
+            let owned = codec.decode(packet);
+            tx.send(CaptureMessage::Packet(owned)).unwrap();
+        },
+        // ...
+    }
+    // stats périodiques
+    if let Ok(stats) = cap.stats() {
+        tx.send(CaptureMessage::Stats(stats)).unwrap();
+    }
+});
+```
+
+---
+
+### 📄 Thread de traitement
+
+```rust
+thread::spawn(move || {
+    while let Ok(msg) = rx.recv() {
+        match msg {
+            CaptureMessage::Packet(pkt) => {
+                println!("Packet len={} ts={}.{:06}", pkt.data.len(), pkt.header.ts.tv_sec, pkt.header.ts.tv_usec);
+                // traitement, analyse...
+            }
+            CaptureMessage::Stats(stats) => {
+                println!("[STATS] received={}, dropped={}, if_dropped={}...", stats.received, stats.dropped, stats.if_dropped);
+            }
+        }
+    }
+});
+```
+
+---
+
+📊 Flowchart – Éviter les paquets perdus en déléguant le traitement
+```mermaid
+flowchart TD
+    start["start"] --> spawn_capture["thread::spawn capture"] & recv_thread["thread::spawn traitement"]
+    subgraph capture
+    spawn_capture --> loop_capture["while !stop_flag"]
+    loop_capture --> checkPause{"pause_flag ?"}
+    checkPause -- true --> wait_pause["sleep(100ms)"]
+    wait_pause --> loop_capture
+    checkPause -- false --> next_packet["cap.next_packet()"]
+    next_packet --> send_packet["tx.send(Packet/Stat)"]
+    end
+    subgraph reciev
+    send_packet -- fifo --> recv_loop
+    recv_thread --> recv_loop
+    recv_loop --> match_msg{"match msg"}
+    match_msg -- Packet --> process_pkt["Decode + Analyse"]
+    match_msg -- Stat --> update_stats["Afficher + Calculer delta"]
+    end
+
+
+```
+---
+
+### ✅ Ce que cette étape apporte
+
+| Gain | Détail |
+|------|--------|
+| 📦 Séparation des responsabilités | capture vs traitement |
+| 🚀 Meilleure performance | capture non bloquée, traitement découplé |
+| 🧱 Meilleure architecture | threads indépendants, plus testables |
+
+---
+
+### 🔜 Prochaines étapes d’optimisation
+
+- 🔄 Utiliser `crossbeam::bounded()` pour remplacer `mpsc::sync_channel`
+- ♻️ Réutiliser les buffers (`Vec<u8>` pré-alloués)
+- 🔕 Désactiver les logs de debug en prod
+- 🧠 Implémenter un pool d’objets pour éviter les reallocations fréquentes
+
+Tu es maintenant prêt à passer à l’optimisation du pipeline de capture/traitement ! 🚀
 
