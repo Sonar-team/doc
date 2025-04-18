@@ -538,9 +538,141 @@ flowchart TD
 ### 🔜 Prochaines étapes d’optimisation
 
 - 🔄 Utiliser `crossbeam::bounded()` pour remplacer `mpsc::sync_channel`
+
+---
+
+## 🧱 Étape 7 — Transition de `mpsc` vers `crossbeam::channel`
+
+### Pourquoi changer ?
+
+- `std::sync::mpsc` est simple, mais limité :
+  - pas de fonction `len()`
+  - performances moindres en haute fréquence
+  - moins de flexibilité sur la stratégie de saturation
+
+### Avantages concrets de `crossbeam::channel`
+
+| Fonctionnalité           | `mpsc`              | `crossbeam::channel`         |
+|--------------------------|---------------------|-------------------------------|
+| Taille bornée (`bounded`) | ✅ (avec `sync_channel`) | ✅                           |
+| `try_send()`             | ❌                  | ✅                            |
+| `len()` pour monitoring  | ❌                  | ✅                            |
+| Performances             | Moyennes            | Excellentes                  |
+| Sécurité thread          | Bonne               | Très bonne                   |
+
+### Code modifié
+
+```rust
+let (tx, rx) = crossbeam::channel::bounded::<CaptureMessage>(10_000);
+```
+
+Et dans le thread :
+
+```rust
+if let Err(err) = tx.try_send(CaptureMessage::Packet(owned)) {
+    error!("[TX] Packet dropped (buffer plein) : {}", err);
+}
+```
+
+---
+
+### 🚦 Scénarios de saturation
+
+- Le canal est plein car le thread de traitement est trop lent
+- Grâce à `try_send()`, on peut **logguer ou ignorer** les paquets plutôt que bloquer
+- Avec `rx.len()` on peut **détecter la saturation imminente** et **agir proactivement** (pause, discard, alertes...)
+
+---
+
+### 📄 Étape bonus : mise en place d’un **backoff exponentiel**
+
+Quand `pcap` n’a pas de paquet à lire, on dort un tout petit peu — mais progressivement plus longtemps, jusqu’à 10 ms max.
+
+```rust
+let mut backoff = 1; // µs
+backoff = (backoff * 2).min(10_000);
+```
+
+Cela **réduit la charge CPU** tout en gardant une réactivité raisonnable.
+
+---
+
+### 📄 Étape bonus : monitoring du canal
+
+On mesure `rx.len()` dans le thread de traitement, et on déclenche un `warn!` si le canal est proche de la saturation :
+
+```rust
+if rx.len() > 9000 {
+    warn!("[BACKPRESSURE] Canal presque plein !");
+}
+```
+
+Cela permet de :
+- Visualiser en prod si le thread de capture produit trop vite
+- Éventuellement **adapter dynamiquement** la stratégie (discard, buffer, etc.)
+
+---
+
+### 📄 Thread de traitement
+
+```rust
+thread::spawn(move || {
+    while let Ok(msg) = rx.recv() {
+        match msg {
+            CaptureMessage::Packet(pkt) => { /* traitement */ },
+            CaptureMessage::Stats(stats) => { /* stats */ },
+        }
+
+        if rx.len() > 9000 {
+            warn!("Canal presque saturé !");
+        }
+    }
+});
+```
+
+---
+
+### ✅ Ce que cette étape apporte
+
+| Gain                              | Détail                                   |
+| --------------------------------- | ---------------------------------------- |
+| 📦 Séparation des responsabilités | capture vs traitement                    |
+| 🚀 Meilleure performance          | capture non bloquée, traitement découplé |
+| 🧱 Meilleure architecture         | threads indépendants, plus testables     |
+| ⚠️ Détection proactive            | backpressure visible dans les logs       |
+
+---
+
+### 📊 Flowchart – Éviter les paquets perdus en déléguant le traitement
+
+```mermaid
+flowchart TD
+    subgraph Thread de capture
+        A["cap.next_packet()"] --> B["try_send(Packet)"]
+        B --> C["try_send(Stat)"]
+        C --> D[Backoff exponentiel si vide]
+    end
+
+    subgraph Thread de traitement
+        E["rx.recv()"] --> F{Message ?}
+        F -- Packet --> G[Analyse + Affichage]
+        F -- Stat --> H[Calcul stats + delta]
+        G --> I["rx.len() > seuil ?"]
+        H --> I
+        I -- Oui --> J["warn!(Canal saturé)"] --> E
+        I -- Non --> E
+    end
+
+    style A fill:#66ccff
+    style E fill:#66ffcc
+```
+
+---
+
+### 🔜 Prochaines étapes d’optimisation
+
 - ♻️ Réutiliser les buffers (`Vec<u8>` pré-alloués)
-- 🔕 Désactiver les logs de debug en prod
 - 🧠 Implémenter un pool d’objets pour éviter les reallocations fréquentes
 
-Tu es maintenant prêt à passer à l’optimisation du pipeline de capture/traitement ! 🚀
+Tu es maintenant prêt à **benchmark chaque taille de buffer**, et visualiser en direct l’impact sur la perf 🧪🚀
 
