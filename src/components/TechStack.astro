@@ -1,0 +1,75 @@
+---
+const stack = [
+  {
+    name: "Rust",
+    icon: "🦀",
+    description: "Langage système sécurisé et rapide, utilisé pour le cœur réseau et la capture de paquets.",
+  },
+  {
+    name: "Vue.js",
+    icon: "🟩",
+    description: "Framework frontend progressif pour l'interface graphique de SONAR.",
+  },
+  {
+    name: "Deno",
+    icon: "🦕",
+    description: "Runtime JavaScript/TypeScript moderne, utilisé pour l’intégration entre Rust et le frontend.",
+  },
+  {
+    name: "ChatGPT",
+    icon: "🤖",
+    description: "Intelligence artificielle intégrée pour aider à la rédaction technique et à l’assistance utilisateur.",
+  },
+];
+---
+
+<section>
+  <h2 class="title">🧰 Stack Technique de SONAR</h2>
+  <div class="stack-grid">
+    {stack.map(({ name, icon, description }) => (
+      <div class="tech-card">
+        <div class="tech-icon">{icon}</div>
+        <h3 class="tech-name">{name}</h3>
+        <p class="tech-desc">{description}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .tech-card {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .tech-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tech-name {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+  }
+
+  .tech-desc {
+    font-size: 0.9rem;
+    color: #444;
+  }
+</style>

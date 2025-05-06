@@ -1,5 +1,5 @@
 ---
-title: Sonar
+title: Sonar 2.2.2
 description: Surveillance Optimisée des Nœuds pour Analyse Réseau
 template: splash
 hero:
@@ -16,7 +16,17 @@ hero:
       variant: secondary
 ---
 
+import YoutubeEmbed from '../../components/YoutubeEmbed.astro';
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import Footer from '../../components/Footer.astro';
+import TechStack from '../../components/TechStack.astro';
+
+
+## Vidéo de presentation
+
+<YoutubeEmbed  videoid="n1CqzT5QDnw" playLabel="Sonar" />
+
+<TechStack />
 
 ## Différentes étapes
 
@@ -34,3 +44,5 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 		Instructions pour installer les dépendances et compiler SONAR en local.
 	</Card>
 </CardGrid>
+
+<Footer />

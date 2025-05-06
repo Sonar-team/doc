@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@astrojs/starlight": "0.33.2",
+    "@justinribeiro/lite-youtube": "^1.8.1",
     "@playwright/test": "^1.51.1",
     "astro": "5.7.1",
     "mermaid": "^11.6.0",
