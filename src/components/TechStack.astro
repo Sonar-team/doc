@@ -1,75 +1,80 @@
 ---
+import { Icon } from 'astro-icon/components'
+
 const stack = [
   {
-    name: "Rust",
-    icon: "🦀",
-    description: "Langage système sécurisé et rapide, utilisé pour le cœur réseau et la capture de paquets.",
+    name: 'Rust',
+    icon: 'mdi:language-rust',
+    description: 'Langage système moderne, utilisé pour la capture réseau et les performances temps réel.',
   },
   {
-    name: "Vue.js",
-    icon: "🟩",
-    description: "Framework frontend progressif pour l'interface graphique de SONAR.",
+    name: 'Vue.js',
+    icon: 'mdi:vuejs',
+    description: "Framework JavaScript progressif pour l'interface utilisateur de SONAR.",
   },
   {
-    name: "Deno",
-    icon: "🦕",
-    description: "Runtime JavaScript/TypeScript moderne, utilisé pour l’intégration entre Rust et le frontend.",
+    name: 'Deno',
+    icon: 'simple-icons:deno',
+    description: 'Runtime TypeScript sécurisé, utilisé pour le scripting et le pont entre frontend et backend.',
   },
   {
-    name: "ChatGPT",
-    icon: "🤖",
-    description: "Intelligence artificielle intégrée pour aider à la rédaction technique et à l’assistance utilisateur.",
+    name: 'ChatGPT',
+    icon: 'simple-icons:openai',
+    description: "Intelligence artificielle intégrée pour aider l'utilisateur pendant l'analyse.",
   },
 ];
 ---
 
-<section>
-  <h2 class="title">🧰 Stack Technique de SONAR</h2>
-  <div class="stack-grid">
-    {stack.map(({ name, icon, description }) => (
-      <div class="tech-card">
-        <div class="tech-icon">{icon}</div>
-        <h3 class="tech-name">{name}</h3>
-        <p class="tech-desc">{description}</p>
-      </div>
-    ))}
+<section id="stack">
+  <div class="container">
+    <h2>Stack technique</h2>
+    <div class="stack-grid">
+      {stack.map((tech) => (
+        <div class="stack-item">
+          <Icon name={tech.icon} size="2.5rem" />
+          <div>
+            <h3>{tech.name}</h3>
+            <p>{tech.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
   </div>
 </section>
 
 <style>
-  .title {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
+  section#stack {
+    padding-block: 4rem;
+  }
+
+  h2 {
+    font-size: var(--sl-text-4xl);
     text-align: center;
+    margin-bottom: 3rem;
   }
 
   .stack-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .stack-item {
+    display: flex;
+    align-items: flex-start;
     gap: 1rem;
   }
 
-  .tech-card {
-    border: 1px solid #ccc;
-    padding: 1rem;
-    border-radius: 12px;
-    text-align: center;
-    background: #fff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  .stack-item h3 {
+    margin: 0;
+    font-size: 1.2rem;
   }
 
-  .tech-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .tech-name {
-    font-weight: bold;
-    margin-bottom: 0.25rem;
-  }
-
-  .tech-desc {
-    font-size: 0.9rem;
-    color: #444;
+  .stack-item p {
+    margin: 0.25rem 0 0;
+    color: #555;
+    font-size: 0.95rem;
   }
 </style>

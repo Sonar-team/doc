@@ -1,13 +1,14 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
+import astroIcon from 'astro-icon';
 import rehypeMermaid from 'rehype-mermaid';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://Sonar-team.github.io',
 
 	markdown: {
-		rehypePlugins: [rehypeMermaid], // <-- clé ici !
+		rehypePlugins: [rehypeMermaid], 
 	  },
 
 	base: '/doc',
@@ -22,6 +23,11 @@ export default defineConfig({
 					icon: "github",
 					label: "GitHub",
 				 	href: "https://github.com/Sonar-team"
+				},
+				{
+					icon: "discord",
+					label: "Discord",
+					href: "https://discord.gg/65twx4CpDr"
 				}
 			],
 			sidebar: [
@@ -41,6 +47,7 @@ export default defineConfig({
 				},
 			],
 		}),
+		astroIcon(),
 	],
 
 });

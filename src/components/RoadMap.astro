@@ -1,0 +1,82 @@
+---
+// Composant Roadmap pour Astro / Starlight
+const versions = [
+  {
+    version: 'v2.2.2',
+    title: 'Pause & Stop Record',
+    description: 'Ajout des fonctions pause et arrêt de l’enregistrement réseau avec synchronisation via Pinia.',
+    status: '✅ Terminé',
+  },
+  {
+    version: 'v2.3',
+    title: 'Nettoyage Vuetify',
+    description: 'Suppression de Vuetify et mise à jour du tri dans la vue matrice.',
+    status: '🚧 En cours',
+  },
+  {
+    version: 'v2.4',
+    title: 'Import universel de matrices',
+    description: 'Support générique pour importer des matrices depuis PCAP, CSV ou Excel.',
+    status: '🕒 Prévu',
+  },
+  {
+    version: 'v2.5',
+    title: 'Édition sécurisée',
+    description: 'Ajout d’un éditeur de matrices avec validation intégrée et mode sécurisé.',
+    status: '🕒 Prévu',
+  },
+];
+---
+
+<style>
+    .timeline {
+      position: relative;
+      margin: 2rem 0;
+      padding-left: 2rem;
+      border-left: 2px solid #e0e0e0;
+    }
+  
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+  
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -1.1rem;
+      top: 0.3rem;
+      width: 1rem;
+      height: 1rem;
+      background-color: #fff;
+      border: 2px solid #3b82f6;
+      border-radius: 50%;
+    }
+  
+    .timeline-item h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: #5b8ed6;
+    }
+  
+    .timeline-item p {
+      margin: 0.5rem 0 0;
+      color: #4b5563;
+    }
+  
+    .status {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+    }
+  </style>
+  
+  <div class="timeline">
+    {versions.map((item) => (
+      <div class="timeline-item">
+        <div class="status">{item.status}</div>
+        <h3>{item.version} — {item.title}</h3>
+        <p>{item.description}</p>
+      </div>
+    ))}
+  </div>
