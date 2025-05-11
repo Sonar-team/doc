@@ -53,8 +53,8 @@ export default defineConfig({
       },
     }),
     starlight({
-      title: 'SONAR',
-	  pagination: false,
+      title: 'Sonar',
+	    pagination: false,
       description: 'Surveillance Optimisée des Nœuds pour Analyse Réseau',
       locales: {
         root: { label: 'Français', lang: 'fr' },
@@ -76,7 +76,6 @@ export default defineConfig({
           href: 'https://discord.gg/65twx4CpDr',
         },
       ],
-      // 🚫 Ne pas mettre `sidebar:` ici !
     }),
     astroIcon(),
   ],
