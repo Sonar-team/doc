@@ -2,34 +2,68 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import astroIcon from 'astro-icon';
 import rehypeMermaid from 'rehype-mermaid';
+import starlightUtils from '@lorenzo_lewis/starlight-utils';
+
+const sidebarRoot = [
+  {
+    label: 'Guides',
+    items: [
+      { label: 'Installation', link: 'guides/installation' },
+      { label: 'Téléchargement', link: 'download' },
+    ],
+  },
+  {
+    label: 'Développement',
+    items: [
+      { label: 'Capture pcap', link: 'developpement/capture' },
+    ],
+  },
+];
+
+const sidebarEn = [
+  {
+    label: 'Guides',
+    items: [
+      { label: 'Installation', link: 'guides/installation' },
+      { label: 'Download', link: 'download' },
+    ],
+  },
+  {
+    label: 'Development',
+    items: [
+      { label: 'Pcap Capture', link: 'developpement/capture' },
+    ],
+  },
+];
 
 export default defineConfig({
-  site: 'https://Sonar-team.github.io',
+  site: 'https://sonar-team.github.io',
   base: '/doc',
-
   markdown: {
     rehypePlugins: [rehypeMermaid],
   },
-
   integrations: [
-    starlight({
-      // Titre multilingue
-      title: {
-        fr: 'Sonar',
-        en: 'Sonar ',
+    starlightUtils({
+      multiSidebar: {
+        switcherStyle: 'horizontalList',
+        sidebars: {
+          root: sidebarRoot,
+          en: sidebarEn,
+        },
       },
-
-      defaultLocale: 'fr',
-
+    }),
+    starlight({
+      title: 'SONAR',
+	  pagination: false,
+      description: 'Surveillance Optimisée des Nœuds pour Analyse Réseau',
       locales: {
-        fr: { label: 'Français', lang: 'fr' },
+        root: { label: 'Français', lang: 'fr' },
         en: { label: 'English', lang: 'en' },
       },
-
       logo: {
         src: './src/assets/logo_sonar.png',
+        replacesTitle: true,
       },
-
       social: [
         {
           icon: 'github',
@@ -42,33 +76,8 @@ export default defineConfig({
           href: 'https://discord.gg/65twx4CpDr',
         },
       ],
-
-      sidebar: [
-        {
-          label: 'Guides',
-          translations: { en: 'Guides' },
-          items: [
-            {
-              label: 'Installation',
-              translations: { en: 'Installation' },
-              link: 'guides/installation',
-            },
-          ],
-        },
-        {
-          label: 'Développement',
-          translations: { en: 'Development' },
-          items: [
-            {
-              label: 'Capture pcap',
-              translations: { en: 'Pcap Capture' },
-              link: 'developpement/capture',
-            },
-          ],
-        },
-      ],
+      // 🚫 Ne pas mettre `sidebar:` ici !
     }),
-
     astroIcon(),
   ],
 });

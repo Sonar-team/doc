@@ -1,0 +1,84 @@
+# Projet SONAR - Instructions de développement sous Linux
+
+Bienvenue sur le projet **SONAR** ! Ce document explique comment préparer votre environnement de développement sous Linux.
+
+---
+
+## Prérequis
+
+Avant de cloner et de lancer le projet, assurez-vous d'avoir installé les outils suivants :
+
+- **Rust** (toolchain stable)
+- **Deno**
+- **Tauri** ([prérequis officiels ici](https://v2.tauri.app/fr/start/prerequisites/))
+- **libpcap** (bibliothèque système nécessaire pour la capture réseau)
+
+
+## Installation
+
+### 1. Installer Rust
+
+Rustup est le moyen recommandé d'installer Rust.
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+rustup default stable
+```
+
+### 2. Installer Deno
+
+```bash
+curl -fsSL https://deno.land/install.sh | sh
+# Pensez à ajouter Deno à votre PATH si besoin.
+```
+
+### 3. Installer libpcap
+
+libpcap est obligatoire pour la capture de paquets. Installez-la selon votre distribution :
+
+- **Ubuntu/Debian**
+  ```bash
+  sudo apt update
+  sudo apt install libpcap-dev
+  ```
+
+- **Fedora**
+  ```bash
+  sudo dnf install libpcap-devel
+  ```
+
+- **Arch Linux**
+  ```bash
+  sudo pacman -S libpcap
+  ```
+
+
+## Développement
+
+### Cloner le projet
+
+```bash
+git clone https://votre-repo.git
+cd votre-repo
+```
+
+### Lancer en mode développement
+
+```bash
+deno install 
+deno task tauri dev
+```
+
+
+## Notes importantes
+
+- En cas d'erreur `cannot find -lpcap`, assurez-vous que **libpcap-dev** est bien installé.
+- Utilisez la dernière version stable de Rust.
+- Deno est utilisé pour gérer certaines fonctionnalités du frontend.
+- Certaines distributions peuvent nécessiter l'installation de bibliothèques GTK ou WebKit (voir la page des [prérequis de Tauri](https://v2.tauri.app/fr/start/prerequisites/)).
+
+---
+
+Bon développement sur **SONAR v2** ! 🚀
+
