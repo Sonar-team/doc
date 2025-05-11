@@ -7,7 +7,8 @@ on:
     branches: [ main ]
   # Vous permet d'exécuter ce workflow manuellement à partir de l'onglet Actions sur GitHub.
   workflow_dispatch:
-
+  schedule:
+    - cron: '0 4 * * *'  # Tous les jours à 04:00 UTC (06:00 en France l’été)
 # Autoriser cette tâche à cloner le dépôt et à créer un déploiement de page
 permissions:
   contents: read
