@@ -1,0 +1,68 @@
+---
+const sponsors = [
+  {
+    name: 'Ministère des Armées',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Minist%C3%A8re_des_Arm%C3%A9es.svg',
+    url: 'https://www.defense.gouv.fr',
+  },
+  {
+    name: 'DGNUM',
+    logo: 'https://www.defense.gouv.fr/sites/default/files/20220310_DGNUM_Header-page-nous-connaitre.png',
+    url: 'https://www.defense.gouv.fr/dgnum',
+  },
+  {
+    name: 'COMCYBER',
+    logo: 'https://www.defense.gouv.fr/sites/default/files/styles/homepage_medallion/public/comcyber/logo-COMCYBER.PNG?itok=POqubd5u',
+    url: 'https://www.defense.gouv.fr/comcyber',
+  },
+  {
+    name: 'ANSSI',
+    logo: 'https://upload.wikimedia.org/wikipedia/fr/3/31/Anssi.png',
+    url: 'https://www.ssi.gouv.fr',
+  },
+  {
+    name: 'DGA',
+    logo: 'https://www.defense.gouv.fr/sites/default/files/styles/homepage_medallion/public/dga/Logotype_DGA_medaillon2.jpg?itok=-wjFdwys',
+    url: 'https://www.defense.gouv.fr/dga',
+  },
+  {
+    name: 'MARINE',
+    logo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAAEECAMAAABN+RseAAAA/1BMVEX///+AgIDUAAAAAIAAAADRAAB4eHh8fHx9fX2vr692dnYAAH3j4+Pv7+8AAHcAAHqioqLY2Ni+vr6oqKiKioqcnJzR0dGUlJSurq5MTEzExMSWlpZVVVW2trb5+fnV1dVoaGjg4OAbGxs+Pj4tLS3r6+v54+NiYmLi4u399PRFRUU5OTlaWlrnk5Pu7vXYMjLIyN0RERFtbaj0z8/wvr7tsLDdV1eyss8yMjIZGRnieHj22dmMjLnsq6s2No/bSUmbm8IbG4bWHR1OTpl6eq/lhoa6utSlpcjfZmbYNjYAAGzlh4dERJVgYKEkJInWISFycqtTU5veYGAgIIeEhLQwhRr3AAAQ+0lEQVR4nO2dC1fbOBOGbaI4xLmSOHdiAkkIhGsKFErplt5ou9vrfv3/v+WTZEmWbdmWE4LlPbzn7CHQxJ5HGmlGI8WraWtVf2u911+/dkxzmrYNq6ls6nrBTtuKVVQxdF3f1NM2YwXZ0HyoQidtQ5aXhQkgQz1tS5bVoAC9yEIMRjFtW5ZT00AENhoOutlP25pl1MAEmmZiXzIzGB7apkNAEPTshYddSkARdCNj4WHKCBhCxsKDDeeigkPAEDIWHmBAoAQuQqbCQ6fgEmgGQ8hQeKjzBDxCZsLD0OAJPAgZCQ9900PgRchEeNjyEfgQdKOSlmWyKvsJ/AjKh4eK4SfwI9CIp6rgGicQwPwIeqGVim2SsoIEQQSlw0OrIEgigggKh4euIUqDBAi6ufP01smoYQoTORGCbpaf3DwJtcUEYgQlw8NuCEEIgoLhoWIWBuJ/ESOoFx7sTSOEQCuIEZQLD1YoQSiCbnSf0sI4dcxQgnAEpcJDPYIgAkGh8DA0o9w6AkGZ8NAfRQ7MKARFwsNWNIG2GYWwqStQIJvGEEQjqBAe7MhxgBRJoEJ4iLcgBiH18GDFt2Ecgm42nsDQUA0kvCAWIdXw0JTx43iEFMNDIyImu5JASC08tKUIpBBSCg+7cgRSCOmEh6nsfG5JMaQQHmzp7Q45hKcPD7b8DSURnjw8JLidLIJuttdnb1BJllvSCE8aHhJt1cgjPGF4SLZRkwBhc1OB1YNAVvSCwcuQ/upBpCQIelg9LV0lQtCNZtr2CpQMQaniElVSBAVHdCeZIynYCQkR1KvZawkRjCdNMmSVrBfStlaoJAhqdkKyXkjbWLESIBRUnI60RAhG2raGaCCNUBimbWuI5BFMJTYbBJJG2Ey9xh0maQRzN21TwySNoOZyB0kWQdUZFaoliaBilk0kiVBQcblGJImgyha0SJII6g5mWQSFB7MsgsKDWRJhU+mvNkghGEqfqK/LIBTStjJSMgjKptmOZBAU/1aDBIKiBW0mCQSlg4ImhaB0UNBkEDaV3FTg1IxFULQA5ioewUzbxDg1I49I6qonF0ixCGonF0jxCGlbGKs4hIJSp8+FikMwlC0fMcX2QtoGxisGoaDwl9youtEIhsKVC6oYhM207ZNQNILiix1H0QgqV8CYYhwpbfNkFImQCT/Siln4Mk+0IhEy4UeRCNnwo0iELMQ1LRohC3FNi0TIQn6ENAxHyECejRWBkIE8GyscIQPrNUfhCOqv+4kiENI2TVahCJsK7zR7FYpgKPOF7TiFIihfh2QKQ1D3+FFAjRAE5evZrsIQVN8X4RSCsJmhZxmGIKi+v8YrBEHZ45AChSAovk/rkRihkOq35RNKjJCN0gVRSC+kbVYSCREys1TAEiJkZqmAJUTIToqH1BcgqL/V7JEIIUMpHpIIIUMpHpIAIUspHpIAIUspHpIAQfGjeAGJxkLaNiVUECEr1WCmIEJWqsFMAoS0TUqqAELGQrMmQMhYaNYECBkLzVoQQfXTzQK1fY+1zdSq2ZEfIVOrZkeBXkjboOTyIaj8Fbww+RCyszHiyoeQvSnVj7DMQf/D15dXl49vmLy8CElXO4dXt+/zSPvrsU5KXoREq53XJ2f5/AbWaginf1drub++310fLPVx31iQ/tzrf/LU/pURrmu5XK5UqtWq1W/354k/7kGQLUTun7x3zV8d4Q9CcFSCGC8ekn3cgyBViLTffPXajxBeL2U70fdSjlcJUiTpCw+CRCFy/zYfAIAIF0vbD/XBi4ApcvenyyDET6kXLwX2Q4LVeuGvAAJUrfpCcnTzCHFT6uWZCCCff39yuAqB9vlHtSaAKFU/SPnTDocQPaVe/hT2wMabR4gJB/fvqoKuKFW/SUDwCFFT6uV7McDGxuoADsWfmoAC9kSsO3EIEQWkC6ELOX70SAhQDx8EDlWqvogZ2BxC6JT6+m0owKMiwDh9VxNB3MsihEyph18iAB7PkaiuBaOi9i5qSLgIIVPqSTTAxs9HRoD+9KMa6Inqr/D3bzEE4ZR6ETqKqR/9++gIECIXcKdaKbQjXATRlHobA7CRf7tSUPPoV7X67sPHz+do9P4RdMTHWITgCe2LGPs38p8ecZ1wiqwuoTwv9/3+4Do4rGvvxPMrQwhmqbFdcPt49msk5SZzEAwRwkh3HYngX/jvx40C2AmPynAnSjL8zvQiCsG38H8TC4AYVsuNvPooSvYCzvRXsD5BEXzbnDGxgCKsNhTu/9zdf344J8H3lwwCHCyBAbFLEDy1VDu4qFkDwnm1hlSFy827c8leQM7kn10pAv+ll0M5AO9ibf/i8urN1WWCOtQLZjNebv6WRMhVfQtThsAZIwlAF2v7lycvN/JECSpKvuWmLEGAgSBw21P7sn2AEA6vvmx4VqKf5BGC0Ws5BoLgbk8dSgNgCD+vON84PTg/f7i+vn44Pz+gqfPp8gje8UAQ3EOd7xMhBPRWAPAZDdkqGbpQuW+/7h8OVkHIVQ8CCGx76mWgnb+8XRXhu9/NcRqxCkGulLN9COx7hP6Ils9f3CbrhauT23/f/txwfOzs5Sc4vn+sYmwYw28fAt3x90+n+X+0f+VHt/MR/+95bQ0E0JWuvQh0wfbFe/ezfS1qzSnJpEkkP8lV+uFBYN+38CzR8iea9nVVADQ6gtW6ZfTO2xKuJ5UNfsHGxYT8z33Nfr86AYwU94/SDbV7T/SrXXsQ3AUbm31wIh27YpAQjNf2DzSnrtoVpR/2B24Wq2neXmC/XuTZjaFWB4BXwrPfwcPdt1UxanfaPWOofvYg8Du1ZEA7KegjdMLGF/fa53d/rURRtbVz8nl3MDsInsMvyOwzEjc8g3k5Hl/Z/vThe1VUPZVDgLnJ6Tv8aT46IwTPgu0QDmT6mpug8l+vzpZBONMCOv8oqp6KVPLMA9U79Gn7fyWPGzkI3sMvh2/ZcpJFuvztvmz2lPdKnHzLUZQ+fubeVfpAOrKUq37nLwYRIp5S4HRD/hZDBdIngfFfb0+uLi/29/cP4X8Xl29OQi99/j0wLkq+qjB0nIMf9E+ld/STD397iwAQIeo84U8nRmPx+ZM/yYbWvz25TFgNuP7msbn2cHBX4pq9do/e9JFMQrXQ+vbUiNxhO8znP7mvmcEbJ4dfefvPTpbbbDu9y7k2V9Ffzn8zLNLsD5ihGr7NMDWid9guOFf4RCx+ixz8io2Tr29WqcVAh3IgancE648DwZY1BzC1Dqz5PQjyhxZwN+CRjUT645+Va5KnHzCEG27tO/iHmuvw9recsIxHNDUSHFq4hW7FWhx2Q/7scc6PnH+oVv/mrTzNVX+HvtuvqZnkHNgV7zIvz1babfbo9CH5wQWqqZnBc2BeTZ/2/0m4Dk1HGfpCqljTDB6J9Gma+aGgTTM/FLRyBo9E+pR9gmc961nPetaznvWsZ/0HFExLlUtUyzc3Y7DHmzUHiz12TKc/oq+Ki/lx7wggbTuVsNakdzxegG1ttLcAgB4q0Y8mYwDadQAvM1ksFugD6/4GZRneg3tc3BAArvJ+BFy6FnwjXHOWewCQo9oN+Be8hNvmr9EFC+cH/MdKpbJbB2tfqfbhvdzfJgC454zaAHDl0zkA+IAzZCDFedjeuJpho7ZmVUrSBsBBga2y9qdkoPuz/QLE4zb83ENnEATYb2PnL9sEAb+Roc+cYz4A7Dm/l9f/bWJ49wl9PeaN3trTeUcuEARtQd/DEEbNscuu+xDWrwoYE5eGRi/2uF6YDWEPzdkbGcIRNc5F6HMNYTm+TxGe4AkT0wn0nm1iUx86Oq1bV2BbjwBgOzoMgY1dF6GhTSFDD/9idcm78Fho99ZOoJUnGnXkKUBjlfp0Bw7DHQDYlg5F6LCe4RG0LUDeqw8JAui320MwWz/C1g2aL/HNzaY2c5sdmzdxHQsiTMyROQbsVJ4HAc+xHQ8CluuJa1N7jCclG81NkAIAco55iJsPxglqMUSwGt0FN395EbS6M7cZDYqAfhQX60fo97B1sP2sDn5FhvYYbENxU1QBd1CZm7N8CBqcwGADjCiCY/zN+hEax9Qu1BMWjVG7wKpDtfZY0CJjYeTGO4ZwTKbeY3id6ahPEF7hn0/w7CTsMNCYYRPlOR0aCUbEf/p0oqEIUzcCMIRt6ls4i2oThCeLC8WRhlMJx5wWcXWbecsenaMMMkzgcCFbDAyhR9MgG+V1dOp9RS+x7ucC1nvE0BG+G3CyshabSyGU83URg7hUhSUT2/TFmKVBFQ6BtsJwe532a8i38W3IZAoR8EzkZp5b1HFMOjlBKGeMjuk4Aa6RuwShwvytBdb8P5boU5sdj587efOmGx50Ore7qVwPReI+httDnlQHXELdd9xtAP9x1u93C1wGth51e5Y1WkBzh3gQjk2rY83mvW3Dmh3hRpxtG3phNOnugJvj0WzuBKrOeNTWikc6/OzRjTaaF+BPlgvVEYJ+NBuNZnh0Z/ExE8961rOe9d9Xu1Vv6TRMGp1icTCjK8xdtsTfaRaHw2Gj3+83is36oN8s9hvdlkGTzf7meDE5bjmfa9WbHZ2cKNky68OmxZ4EwNKNcqfYH9YtemrDsFrNZhMlwPXBEvUxu3/DFda2brh60YiFT5hDgCNcUVn0YAju2cOJWyHqg+N2pdKekWyq3ASsVKTZRW6FagMW5toweQcjGttstLBbDFqtzrZzjcRCptG0oeKmBFO2UNPm2Axa0WsCnOqQlWOHLt8aJKnFL9jivuMWbyw+pRixNRQSTEWctLV9tBQCahG2EnYvbALWJM6/QtOcZkRtTK1sgmP6gSFNe9D1aDG1zRBswFtd9yA03ErgUghdtIykDTSmF66AOU37tT16Hwdhx0WouF2F0zzchxPdLaaWGQL0Eq5s4UUYMoTlnv5ZtFC70ZIRvbDe3HIqD8gOL4LmInT40mSbrMgmlSIbXxX27wA5Dzs5JkZY9jhNUcerRmfYbdNGBbjSwr9PhLDwFFPIaJiUsXM66wM6sosmqj6xSUmM8Gp5BHR1p+t75DEcXQOvc/hViQChAjwlrZnjVhABtTiu/1XoShll7jdumwQQdLtS0T1NlhABXQR3fY84I55bWa06DGEHeGZBUudACGhgLGCbTkmxZQf9LLptEkBwtOQRRYyAtzpgE44dv9+ZE5O4Z6MIENoA8AvgltsL2A3hDFkmjTDrO5+i5aMAAlqIb4ElHzzpIKBlPOz6I+ciIzCCmnOBSYiw6y2pWGwsaM4kOtN2nbFigzm8nrlgE1gAAV+6s+QzD5tu7QRoE5wmVIDRgrI8OyMCBNvzBhhK8OB95TQDKqTpZSd8tF514PUGM+Z4YoTdJXuhTsPQDfPGjsVu5G64iWakuWfXb8+ZcWisx1Uox2QWYai7h8WFJRFG5AXeG3PuyII1N682aBbAITT4Eb9LuoQZN6RzdYOG8CYtW3IILbcXtCW3Tjpsap8Si90ilcm1cp/fJaQDc8613zFBdD8yIBW+G5rU2rRNXIRWDyOQ3Ky81Lw647bRnBvsscPLRTytaPSurMWZKfYeG6Etsmtb4fZ3TZws7bh7QhPS3hatcBro9wGdN4Zgmae8w8Y9Zl+eaJAyNm3ZGxa2Hc+mj4hAWRBZWMAgZsG/7s5oQ454h+vNUHgD4112Mxw7UFFv0Rnoc9wsFVRyHTRbpnd2kFXDbBabOtuhKdpa12oO6845eLPVLXYHM/R6ZHTqxW5nEzvJoDMcFjum47fT1vEe2Jt1yc3NTrfYGrGpBXKZg2LRwj7YLjSL8G6WPWrBRVS33rF0SGuPOnDhZZnH820rKrb9H8JXUIfT4LDaAAAAAElFTkSuQmCC',
+    url: 'https://www.defense.gouv.fr/marine',
+  },
+];
+---
+
+<section class="sponsors">
+  <h2>Partenaires institutionnels</h2>
+  <div class="sponsor-grid">
+    {sponsors.map((sponsor) => (
+      <a href={sponsor.url} target="_blank" rel="noopener noreferrer" class="sponsor-item">
+        <img src={sponsor.logo} alt={sponsor.name} />
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .sponsors {
+    padding: 2rem 0;
+    text-align: center;
+  }
+  .sponsor-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+  }
+  .sponsor-item img {
+    max-height: 80px;
+    max-width: 160px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+  }
+  .sponsor-item:hover img {
+    transform: scale(1.05);
+  }
+</style>
