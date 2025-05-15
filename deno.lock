@@ -2,6 +2,7 @@
   "version": "5",
   "specifiers": {
     "npm:@astrojs/starlight@0.34.2": "0.34.2_astro@5.7.11__vite@6.3.4___picomatch@4.0.2__zod@3.24.4",
+    "npm:@iconify-json/bx@^1.2.2": "1.2.2",
     "npm:@iconify-json/mdi@^1.2.3": "1.2.3",
     "npm:@iconify-json/simple-icons@^1.2.33": "1.2.33",
     "npm:@justinribeiro/lite-youtube@^1.8.1": "1.8.1",
@@ -490,6 +491,12 @@
     },
     "@fortawesome/fontawesome-free@6.7.2": {
       "integrity": "sha512-JUOtgFW6k9u4Y+xeIaEiLr3+cjoUPiAuLXoyKOJSia6Duzb7pq+A76P9ZdPDoAoxHdHzq6gE9/jKBGXlZT8FbA=="
+    },
+    "@iconify-json/bx@1.2.2": {
+      "integrity": "sha512-hZVx6LMEkYckScdRdUuQWcmv8Lm2au6Cnf799TLoR6YgiAfFvaJ4M5ElwcnExvCu8ntsS7jW89r0W5LwBAfZXQ==",
+      "dependencies": [
+        "@iconify/types"
+      ]
     },
     "@iconify-json/mdi@1.2.3": {
       "integrity": "sha512-O3cLwbDOK7NNDf2ihaQOH5F9JglnulNDFV7WprU2dSoZu3h3cWH//h74uQAB87brHmvFVxIOkuBX2sZSzYhScg==",
@@ -4628,6 +4635,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@astrojs/starlight@0.34.2",
+        "npm:@iconify-json/bx@^1.2.2",
         "npm:@iconify-json/mdi@^1.2.3",
         "npm:@iconify-json/simple-icons@^1.2.33",
         "npm:@justinribeiro/lite-youtube@^1.8.1",
