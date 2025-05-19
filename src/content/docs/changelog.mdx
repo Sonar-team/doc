@@ -1,0 +1,267 @@
+---
+title: Changelog
+description: Historique des versions de l'application SONAR.
+---
+
+# 📝 Changelog
+
+## [2.2.8] - 2025-05-19
+
+### ✨ Fonctionnalités
+
+- Ajout du **monitoring CPU** en temps réel avec affichage dans la status bar.
+- Ajout de la fonctionnalité **d’export des logs** applicatifs depuis le backend Rust.
+
+---
+
+## [2.2.4] - 2025-05-12
+
+### 🐛 Corrections
+
+- Désactivation des éléments de configuration pendant la capture.
+
+---
+
+## [2.2.1] - 2025-05-05
+
+### 🐛 Corrections
+
+- Compatibilité macOS.
+
+---
+
+## [2.2.1] - 2025-05-05
+
+### ✨ Fonctionnalités
+
+- Ajout de la fonctionnalité **"stop record"**.
+- Ajout de l’icône `stop.svg` dans `src/assets`.
+- Compatibilité améliorée entre Windows 11 et Ubuntu pour les timestamps des paquets réseau (`tv_sec`, `tv_usec`).
+- Ajout d'une gestion conditionnelle multiplateforme avec `#[cfg(target_os = "...")]` pour la conversion des timestamps.
+
+### 🛠 Corrections
+
+- Correction d’un bug de compilation sous Windows 11 (`i32` vs `i64`).
+- Le fichier `.gitignore` n’ignore plus les `.svg` du dossier `src/assets`.
+
+### 🎨 Interface
+
+- Amélioration de la top bar.
+- Amélioration de la status bar.
+
+### 🔧 Technique
+
+- Tag `app-v2.2.0` ajouté à `main` après merge.
+- Nettoyage de warnings (`unused import: info`) dans le module `commandes`.
+- Suppression de la page de nommage de fichier au démarrage de SONAR.
+- Retrait de la fonctionnalité d'automatisation de la sauvegarde.
+
+---
+
+## [1.15.0] - 2024-11-07
+
+### ✨ Fonctionnalités
+
+- Intégration de la structure `PacketKey` pour distinguer les paquets sans considérer leur taille (`packet_size`).
+- Ajout de la fonctionnalité de conversion de `PacketKey` en `PacketInfos`.
+
+### 🐛 Corrections
+
+- Résolution d'un problème d’export CSV/Excel.
+- Mise à jour des méthodes front-end pour l’API `infos` + `stats`.
+
+### ⚙️ Améliorations
+
+- Refactoring de `get_matrice_data`.
+- Amélioration des logs de debug.
+
+---
+
+## [1.14.1] - 2024-10-31
+
+### 🐛 Correction critique
+
+- Correction du parsing DNS bloquant l’application.
+
+---
+
+## [1.12.0] - 2024-07-04
+
+### ✨ Ajouté
+
+- Début du parsing pour un protocole interne (`pacquet 7`).
+
+---
+
+## [1.11.1] - 2024-05-17
+
+### ✨ Ajouté
+
+- Pipeline CI/CD pour Raspberry Pi.
+
+---
+
+## [1.11.0] - 2024-05-02
+
+### ✨ Nouvelles fonctionnalités
+
+- Affichage des IP publiques dans la vue graphique.
+
+### 🛠 Modifications
+
+- Saisie de durée jusqu’à 48h (`type="text"` au lieu de `time`).
+- Refonte de `validateTime` pour le support des longues durées.
+
+### 🐛 Corrections
+
+- Mise à jour de la récupération d’infos système via `whoami`.
+
+---
+
+## [1.9.0] - 2024-03-20
+
+### ✨ Ajouté
+
+- Intégration d’un **tableau avec Vuetify**.
+
+---
+
+## [1.8.0] - 2024-03-19
+
+### ✨ Nouvelles fonctionnalités
+
+- Visualisation réseau enrichie (vues en courbes, couleurs dynamiques selon le protocole).
+
+---
+
+## [1.7.0] - 2024-03-18
+
+### ✨ Fonctionnalités
+
+- Détection des types d’IP (privée, APIPA, multicast, loopback, ULA, publique, etc.).
+
+### ⚙️ Améliorations
+
+- Détection plus fiable des adresses APIPA et multicast IPv4.
+- Support enrichi d’IPv6 : lien-local et ULA.
+
+### 🐛 Corrections
+
+- Correction de la classification `::1` (loopback IPv6).
+
+### 📚 Documentation
+
+- Ajout d’une doc complète sur les types d’IP.
+
+### 🧪 Tests
+
+- Ajout de tests unitaires pour les nouvelles fonctionnalités IP.
+
+---
+
+## [1.6.0] - 2024-02-26
+
+### 🎨 UI/UX
+
+- Tableau temps réel avec lignes vides initiales.
+- Ajustement de la hauteur des lignes.
+
+### ✨ Nouvelles fonctionnalités
+
+- Filtre IPv4.
+- Suppression de l’interface `lo` sous Linux.
+
+---
+
+## [1.5.0] - 2024-02-15
+
+### ✨ Nouvelles fonctionnalités
+
+- Colonne L7.
+- Documentation.
+
+---
+
+## [1.4.0] - 2024-02-15
+
+### 🐛 Corrections
+
+- Fix divers mineurs.
+
+---
+
+## [1.3.3] - 2024-02-15
+
+### 🐛 Corrections
+
+- Affichage correct des interfaces sur Windows.
+
+---
+
+## [1.3.2] - 2024-02-13
+
+### ✨ Nouvelles fonctionnalités
+
+- Ajout de code coverage.
+
+---
+
+## [1.3.1] - 2024-02-13
+
+### ✨ Nouvelles fonctionnalités
+
+- Ajout de la colonne `Packet Size`.
+
+---
+
+## [1.2.1]
+
+### ✨ Nouvelles fonctionnalités
+
+- Info-bulle avec IP sur les nœuds du graphe.
+
+---
+
+## [1.1.1]
+
+### ✨ Nouvelles fonctionnalités
+
+- Export SVG de la vue graphique.
+- Affichage des protocoles sur les arêtes du graphe.
+
+---
+
+## [1.1.0]
+
+### ✨ Nouvelles fonctionnalités
+
+- Sauvegarde en Excel (`.xlsx`).
+- Vue graphique des communications réseau.
+
+---
+
+## [1.0.1]
+
+### ✨ Nouvelles fonctionnalités
+
+- Gestion TCP/IP améliorée.
+- Export CSV.
+
+### ⚙️ Améliorations
+
+- Optimisation générale des performances.
+- Amélioration UI/UX.
+
+### 🐛 Corrections
+
+- Résolution de bugs mineurs.
+
+---
+
+## [1.0.0]
+
+### 🚀 Première version stable
+
+- Base fonctionnelle de SONAR.
+- Stack : Rust + Tauri + Vue.js.
+- CI GitHub, doc Markdown, vue réseau.
