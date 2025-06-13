@@ -1,0 +1,78 @@
+---
+title: Matrices de flux réseau
+description: Format des matrices de flux réseau.
+---
+
+# 📊 Proposition de nouveau format pour les matrices de flux réseau
+
+Actuellement, notre format de matrice de flux est le suivant :
+
+> **MAC Source | MAC Destination | Interface | L3 Protocol | IP Source | IP Source Type | IP Destination | IP Destination Type | L4 Protocol | Source Port | Destination Port | L7 Protocol | Taille des paquets | Count**
+
+Cependant, ce format mélange plusieurs logiques :
+
+* On oscille entre le **modèle TCP/IP** et le **modèle OSI**, sans choisir clairement.
+* Certains champs sont ambigus (ex. : "Interface" ou "L3 Protocol") et les noms de colonnes ne reflètent pas toujours la structure réelle d’un paquet réseau.
+
+---
+
+## 🎯 Objectif
+
+Clarifier et normaliser le format des matrices pour qu’il :
+
+* reflète la structure d’un paquet réseau tel qu’on le **parse réellement** ;
+* soit **compréhensible pour les analystes** et **interopérable** avec d’autres outils ;
+* permette une **extension** future (ajout de protocoles, fusion de relevés, etc.).
+
+---
+
+## ✅ Nouveau format proposé
+
+\| MAC Source | MAC Destination | EtherType | IP Source | Type IP Source | IP Destination | Type IP Destination | Protocole Transport | Port Source | Port Destination | Protocole Applicatif | Taille cumulée | Occurrences | Dernière apparition |
+
+#### Description des champs :
+
+* **MAC Source / Destination** : adresse de niveau 2 (couche liaison).
+* **EtherType** : valeur du champ `ethertype` de l’entête Ethernet, indiquant le protocole encapsulé (ex. IPv4, IPv6, ARP, PROFINET).
+* **IP Source / Destination** : adresses IP si présentes (sinon vide).
+* **Type IP** : `Unicast`, `Broadcast`, `Multicast`, selon l’adresse.
+* **Protocole Transport** : TCP, UDP, ICMP (extrait du champ "Protocol" des en-têtes IPv4/IPv6).
+* **Ports** : valides uniquement pour TCP/UDP, sinon `-`.
+* **Protocole Applicatif** : DNS, HTTP, TLS, etc., si identifiable.
+* **Taille cumulée** : total des octets sur ce flux.
+* **Occurrences** : nombre d’apparitions du même flux.
+* **Dernière apparition** : date et heure du dernier paquet observé pour ce flux.
+
+---
+
+## ❌ Éléments supprimés
+
+* **Interface** : ne fait pas partie du flux lui-même (dépend du contexte de capture).
+* **Niveaux OSI mal utilisés** : les colonnes "L3", "L4", "L7" sont remplacées par des noms explicites, selon la vraie source de l’information (EtherType, Protocol, etc.).
+
+---
+
+## 🧠 Pourquoi ICMP dans la colonne transport ?
+
+Même si ICMP n’est pas un protocole de transport dans le modèle OSI, **il est encapsulé dans l’IPv4 comme TCP ou UDP**, et analysé à partir du même champ. D’un point de vue pratique, il est logique de l’afficher au même niveau.
+
+---
+
+### 🧠 Pourquoi ne pas ajouter une colonne "Session" pour TLS ?
+
+Parce que SONAR ne déchiffre pas les couches TLS pour accéder aux données encapsulées. On affiche le **protocole observable**, pas les couches logiques intermédiaires non décryptées.
+
+---
+
+## 📌 Exemple (simplifié)
+
+| MAC Source             | MAC Destination        | EtherType | IP Source    | Type IP Source | IP Destination | Type IP Destination | Transport | Port Src | Port Dst | Application | Taille | Occurrence | Dernière apparition |
+| ---------------------- | ---------------------- | --------- | ------------ | -------------- | -------------- | ------------------- | --------- | -------- | -------- | ----------- | ------ | ---------- | ------------------- |
+| 00:11:22:33:44:55      | FF\:FF\:FF\:FF\:FF\:FF | ARP       | -            | -              | -              | -                   | -         | -        | -        | -           | 128    | 3          | 2025-06-13 13:32:45 |
+| AA\:BB\:CC\:DD\:EE\:FF | 11:22:33:44:55:66      | IPv4      | 192.168.1.12 | Unicast        | 192.168.1.1    | Unicast             | TCP       | 443      | 52428    | TLS         | 18200  | 7          | 2025-06-13 13:32:49 |
+
+---
+
+## 🧾 Conclusion
+
+Cette proposition vise à clarifier la terminologie, à s’aligner sur la **structure réelle des trames réseau**, et à préparer l’outil pour de futures extensions. Si vous avez des retours ou d’autres cas à couvrir, on peut ajuster.

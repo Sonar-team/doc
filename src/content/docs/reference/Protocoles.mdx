@@ -1,0 +1,60 @@
+---
+title: Protocoles
+description: Références des protocoles détectés par SONAR.
+---
+
+## 📚 Références des protocoles détectés par SONAR
+
+Cette page présente l’ensemble des **valeurs reconnues automatiquement par SONAR** lors de l’analyse des trames réseau. Elle recense les protocoles détectés aux couches **Ethernet**, **Transport**, et **Applicative**, directement extraits de la base de code.
+
+---
+
+### 🧩 Protocoles de couche applicative (`Protocole Applicatif`)
+
+| **Colonne**            | **Source**        | **Valeurs détectées**                               | **Remarques**                                                                                                     |
+| ---------------------- | ----------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `Protocole Applicatif` | Payload (Layer 7) | `DNS`, `TLS`, `NTP`, `Bitcoin`, `S7Comm`, `Unknown` | Détection basée sur `TryFrom<&[u8]>`. Si aucun protocole connu n'est reconnu, la valeur `"Unknown"` est utilisée. |
+
+#### ℹ️ Notes :
+
+* La détection TLS s’arrête au **handshake** : SONAR n’analyse pas le contenu chiffré.
+* Certains protocoles comme **COTP** sont en cours de développement mais non encore activés dans le parseur.
+
+---
+
+### 🔗 Protocoles de niveau liaison (`EtherType`)
+
+| **Colonne** | **Source**                   | **Valeurs détectées**                                                                                                                                                                                                                             | **Remarques**                                                                                               |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `EtherType` | Champ `ethertype` (Ethernet) | `IPv4`, `IPv6`, `ARP`, `VLAN-tagged frame`, `LLDP`, `Profinet`, `MRP`, `PTP`, `Q-in-Q`, `PBridge`, `Trill`, `DECnet`, `Rarp`, `AppleTalk`, `Aarp`, `Ipx`, `Qnx`, `MPLS Unicast`, `MPLS Multicast`, `PPPoe`, `CobraNet`, `cfm`, `Unknown (0xXXXX)` | Valeur déterminée à partir du champ `ethertype` de la trame Ethernet. Valeur `Unknown` si code non reconnu. |
+
+#### ℹ️ Notes techniques :
+
+* `EtherType` permet d’identifier le protocole encapsulé (IP, ARP, etc.).
+* SONAR utilise ce champ pour déterminer dynamiquement quel parseur de couche supérieure invoquer.
+
+---
+
+### 🚚 Protocoles de transport (`Protocole Transport`)
+
+| **Colonne**           | **Source**                   | **Valeurs détectées**                                                                                                                                                     | **Remarques**                                                                                                                                          |
+| --------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Protocole Transport` | Champ `protocol` (IPv4/IPv6) | `None`, `ICMP`, `ICMPv6`, `IGMP`, `TCP`, `UDP`, `PIMv2`, `VRRP`, `EGP`, `IGRP`, `OSPF`, `EIGRP`, `GRE`, `IP-in-IP`, `ESP`, `AH`, `RDP`, `DCCP`, `RSVP`, `SCTP`, `Unknown` | Interprété selon la [liste officielle IANA](https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml). Valeur `Unknown` si non mappée. |
+
+#### ℹ️ Détails :
+
+* `None` est utilisé si aucun protocole transport n’est identifié.
+* Certains protocoles comme `ESP` ou `AH` relèvent de la **sécurité réseau** (IPSec).
+* La valeur `Unknown` est retournée si le numéro du protocole est inconnu de SONAR.
+
+---
+
+### ✅ Conclusion
+
+Ces tableaux constituent la base de référence pour interpréter les **matrices de flux générées par SONAR**. Chaque colonne contient uniquement des valeurs **détectées automatiquement** à partir des trames capturées, sans interprétation manuelle.
+
+> 🛠️ Cette page sera mise à jour au fil des évolutions du moteur de parsing SONAR.
+
+---
+
+Souhaites-tu une version `.mdx` prête à intégrer dans Astro Starlight ?
