@@ -1,12 +1,15 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Déclenchez le workflow chaque fois que vous poussez vers la branche `main`
+  # Vous utilisez un nom de branche différent ? Remplacez `main` par le nom de votre branche
   push:
     branches: [ main ]
+  # Vous permet d'exécuter ce workflow manuellement à partir de l'onglet Actions sur GitHub.
   workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *' # Tous les jours à 04:00 UTC (06:00 en France l'été)
-
+    - cron: '0 4 * * *'  # Tous les jours à 04:00 UTC (06:00 en France l’été)
+# Autoriser cette tâche à cloner le dépôt et à créer un déploiement de page
 permissions:
   contents: read
   pages: write
@@ -18,41 +21,19 @@ jobs:
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v4
-        with:
-          submodules: true
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20.x'
-      
-      - name: Install pnpm
-        run: curl -fsSL https://get.pnpm.io/install.sh | sh -
-        shell: bash
-      
-      - name: Add pnpm to PATH
-        run: echo "$HOME/.pnpm/bin" >> $GITHUB_PATH
-      
-      - name: Cache Playwright browsers
-        uses: actions/cache@v3
-        with:
-          path: node_modules/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-      
-      - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm exec playwright install --with-deps
-      
-      - name: Build and deploy
+      - name: Install Playwright
+        run: npm install -D @playwright/test@latest
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Install, build, and upload your site
         uses: withastro/action@v3
+        
         with:
-          path: .
-          node-version: 20
-          package-manager: pnpm@latest
-
+            path: . # L'emplacement racine de votre projet Astro dans le dépôt. (facultatif)
+            node-version: 20
+            package-manager: pnpm@latest
+      
+  
   deploy:
     needs: build
     runs-on: ubuntu-latest
