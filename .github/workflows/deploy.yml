@@ -19,13 +19,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout your repository using git
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1 # ajuste à ta version locale
 
       - name: Install dependencies
         run: pnpm install
@@ -39,6 +44,7 @@ jobs:
           path: .
           node-version: 20
           package-manager: pnpm@latest
+
       
   
   deploy:
