@@ -13,6 +13,7 @@ description: Guide d'utilisation de SONAR sur différents systèmes d'exploitati
 Une fois installé, vous pouvez lancer une capture en cliquant sur le bouton **Démarrer** dans l'interface, représenté par le logo Sonar :
 
 <img src="/doc/assets/logo_sonar.png" alt="Logo SONAR" style="width: 50px; height: auto;" />
+
 *Figure 2 : Logo de SONAR*
 
 ## Configuration
