@@ -2,6 +2,8 @@
 ---
 title: Installation de SONAR
 description: Guide d'installation de SONAR sur différents systèmes d'exploitation.
+sidebar:
+  order: 301
 ---
 
 ## Installation de SONAR

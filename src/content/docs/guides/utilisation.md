@@ -1,6 +1,8 @@
 ---
 title: Utilisation de SONAR
 description: Guide d'utilisation de SONAR sur différents systèmes d'exploitation.
+sidebar:
+  order: 302
 ---
 
 # Guide d'utilisation

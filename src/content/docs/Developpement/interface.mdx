@@ -1,0 +1,656 @@
+---
+title: Comment trouver les interfaces réseau en Rust avec Tauri
+description: Un guide pas à pas pour construire une fonction de recherche des interfaces réseau dans une application Tauri avec la crate `pcap`.
+sidebar:
+  order: 402
+---
+
+# 🚀 Lister ses interfaces réseau en Rust avec pcap (Linux)
+
+Quand on commence à toucher à la capture réseau en Rust, la première étape est simple : savoir quelles interfaces réseau sont disponibles sur la machine.  
+Avec la crate `pcap`, c’est possible en quelques lignes de code.
+
+Dans ce guide, on va voir comment :
+
+- Installer les dépendances nécessaires sous Linux
+- Créer un projet Rust minimal
+- Lister les interfaces réseau et leurs adresses
+- Ajouter quelques tests unitaires simples
+
+---
+
+## 🛠️ Pré-requis sous Linux
+
+La crate `pcap` est un binding Rust de la librairie **libpcap**, très utilisée en C (par Wireshark, tcpdump…).
+
+Pour que tout fonctionne, installe les headers de développement :
+
+```bash
+sudo apt update
+sudo apt install libpcap-dev
+````
+
+⚠️ **Note** :
+Lister les interfaces **ne demande pas** de `sudo`.
+Mais si tu veux capturer des paquets plus tard, il faudra :
+
+* lancer ton programme avec `sudo`, ou
+* donner les droits à ton binaire avec `setcap`.
+
+---
+
+## 📦 Création du projet
+
+```bash
+cargo new pcap-list-interfaces
+cd pcap-list-interfaces
+```
+
+Ajoute la crate `pcap` dans `Cargo.toml` :
+
+```toml
+[dependencies]
+pcap = "0.10.0"
+thiserror = "1"
+```
+
+---
+
+## 💻 Le code complet
+
+Crée `src/main.rs` :
+
+```rust
+use pcap::Device;
+use thiserror::Error;
+
+fn main() -> Result<(), PcapError> {
+    let interfaces = get_interfaces()?;
+    print_interfaces_names(interfaces.clone());
+    print_interfaces_addresses(interfaces);
+    Ok(())
+}
+
+#[derive(Debug, Error)]
+pub enum PcapError {
+    #[error("Impossible de lister les interfaces réseau")]
+    DeviceListError(#[from] pcap::Error),
+}
+
+fn get_interfaces() -> Result<Vec<Device>, PcapError> {
+    let devices = Device::list()?;
+    Ok(devices)
+}
+
+fn print_interfaces_names(interfaces: Vec<Device>) {
+    for interface in interfaces {
+        println!("{}", interface.name);
+    }
+}
+
+fn print_interfaces_addresses(interfaces: Vec<Device>) {
+    for interface in interfaces {
+        for address in interface.addresses {
+            println!("{:?}", address.addr);
+        }
+    }
+}
+```
+
+---
+
+## 🧪 Ajout de tests unitaires
+
+Même pour un petit utilitaire, écrire quelques tests aide à éviter les mauvaises surprises :
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_interfaces_returns_ok() {
+        let res = get_interfaces();
+        assert!(res.is_ok(), "expected Ok, got {:?}", res);
+    }
+
+    #[test]
+    fn print_interfaces_names_does_not_panic() {
+        let interfaces = get_interfaces().unwrap_or_else(|_| Vec::new());
+        let outcome = std::panic::catch_unwind(|| {
+            print_interfaces_names(interfaces.clone());
+        });
+        assert!(outcome.is_ok(), "print_interfaces_names panicked");
+    }
+
+    #[test]
+    fn print_interfaces_addresses_does_not_panic() {
+        let interfaces = get_interfaces().unwrap_or_else(|_| Vec::new());
+        let outcome = std::panic::catch_unwind(|| {
+            print_interfaces_addresses(interfaces);
+        });
+        assert!(outcome.is_ok(), "print_interfaces_addresses panicked");
+    }
+}
+```
+
+Ces tests garantissent que :
+
+* `get_interfaces` fonctionne correctement
+* l’affichage des noms ne panique pas
+* l’affichage des adresses ne panique pas
+
+---
+
+## ▶️ Lancer le programme
+
+```bash
+cargo run
+```
+
+Exemple de sortie sur une machine Linux :
+
+```bash
+lo
+eth0
+wlan0
+Some(192.168.1.42)
+Some(127.0.0.1)
+Some(::1)
+```
+
+---
+
+## ▶️ Lancer les tests
+
+```bash
+cargo test
+```
+
+Résultat attendu :
+
+```bash
+running 3 tests
+test tests::get_interfaces_returns_ok ... ok
+test tests::print_interfaces_names_does_not_panic ... ok
+test tests::print_interfaces_addresses_does_not_panic ... ok
+```
+
+---
+
+## ✅ Conclusion
+
+En moins de 100 lignes de Rust, on a appris à :
+
+* Lister les interfaces réseau d’une machine sous Linux
+* Afficher leurs adresses IP
+* Gérer proprement les erreurs avec `thiserror`
+* Écrire des tests unitaires basiques
+
+---
+
+# 🔭 Pour aller plus loin : intégration dans Tauri
+
+### 1. Création du projet Tauri
+
+```bash
+deno run -A npm:create-tauri-app
+```
+
+Exemple de configuration :
+
+```
+✔ Project name · get_net_interfaces
+✔ Identifier · com.get_net_interfaces.app
+✔ Frontend · Vue (TypeScript)
+✔ Package manager · deno
+```
+
+### 2. Backend Tauri (Rust)
+
+Crée un dossier `src-tauri/src/commandes/` et ajoute :
+
+```rust
+use pcap::Device;
+use tauri::command;
+use thiserror::Error;
+
+#[command]
+pub fn get_net_interfaces() -> Result<Vec<String>, PcapError> {
+    let devices = get_interfaces()?;
+    Ok(devices.into_iter().map(|d| d.name).collect())
+}
+
+fn get_interfaces() -> Result<Vec<Device>, PcapError> {
+    let devices = Device::list()?;
+    Ok(devices)
+}
+
+#[derive(Debug, Error)]
+pub enum PcapError {
+    #[error("Impossible de lister les interfaces réseau")]
+    DeviceListError(#[from] pcap::Error),
+}
+
+impl serde::Serialize for PcapError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_ref())
+    }
+}
+```
+
+### 3. Frontend Vue (Composition API)
+
+```vue
+<script setup lang="ts">
+import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+
+const devices = ref<string[]>([]);
+
+async function getNetInterfaces() {
+  devices.value = await invoke("get_net_interfaces");
+}
+</script>
+
+<template>
+  <main class="container">
+    <button @click="getNetInterfaces">Get Net Interfaces</button>
+    <ul>
+      <li v-for="device in devices" :key="device">{{ device }}</li>
+    </ul>
+  </main>
+</template>
+```
+
+---
+
+👉 Résultat :
+Ton appli Tauri peut lister les interfaces réseau **côté Rust** avec `pcap`, et les renvoyer **au frontend Vue** via une commande `#[command]`.
+
+
+## Pour aller plus loin
+
+### 1) Pourquoi ça casse dans Tauri : l’*orphan rule* (règle d’orphelin)
+
+Quand une commande Tauri `#[command]` renvoie une valeur à l’UI, Tauri la sérialise (JSON) avec **Serde**.
+Si tu renvoies directement un type externe comme `pcap::Device`, deux soucis :
+
+1. **Le type n’est pas sérialisable** (pas de `Serialize` sur `pcap::Device`).
+2. Tu ne peux **pas** ajouter `Serialize` à `pcap::Device` car Rust applique la **règle d’orphelin** :
+
+   > *On ne peut pas implémenter un trait **externe** (ici `serde::Serialize`) pour un type **externe** (ici `pcap::Device`) depuis une **autre** crate.*
+
+Autrement dit, ce qui **ne marche pas** :
+
+```rust
+// ❌ Interdit par l’orphan rule
+impl serde::Serialize for pcap::Device {
+    fn serialize<S>(&self, _s: S) -> Result<S::Ok, S::Error>
+    where S: serde::Serializer
+    { /* ... */ }
+}
+```
+
+### 2) La solution robuste : un **DTO** (Data Transfer Object)
+
+On crée **nos propres structures** (qui **nous** appartiennent), on leur dérive `Serialize`, et on ajoute des conversions `From<pcap::*>` pour mapper les champs utiles.
+Ensuite, la commande Tauri renvoie **nos DTO** → sérialisation OK, UI contente.
+
+---
+
+### 3) Backend Tauri v2 (Rust) — DTO complet + commande
+
+`src-tauri/Cargo.toml` (extraits) :
+
+```toml
+[dependencies]
+tauri = { version = "2", features = ["macros"] }
+pcap = "2"
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+```
+
+`src-tauri/src/commandes/mod.rs` :
+
+```rust
+use std::net::IpAddr;
+
+use pcap::{
+    Address as PcapAddress,
+    ConnectionStatus as PcapConnectionStatus,
+    Device,
+    DeviceFlags as PcapDeviceFlags,
+    IfFlags as PcapIfFlags,
+};
+use serde::Serialize;
+use tauri::command;
+use thiserror::Error;
+
+/// ===== DTO sérialisables pour l'IPC =====
+
+#[derive(Debug, Serialize)]
+pub struct NetDevice {
+    pub name: String,
+    pub desc: Option<String>,
+    pub addresses: Vec<Address>,
+    pub flags: DeviceFlags,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Address {
+    pub addr: IpAddr,
+    pub netmask: Option<IpAddr>,
+    pub broadcast_addr: Option<IpAddr>,
+    pub dst_addr: Option<IpAddr>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DeviceFlags {
+    pub if_flags: IfFlags,
+    pub connection_status: ConnectionStatus,
+}
+
+#[derive(Debug, Serialize)]
+pub struct IfFlags {
+    /// Valeur brute (bitfield). Utile pour décoder côté UI ou plus tard.
+    pub bits: u32,
+}
+
+#[derive(Debug, Serialize)]
+pub enum ConnectionStatus {
+    Unknown,
+    Connected,
+    Disconnected,
+    NotApplicable,
+}
+
+/// ===== Conversions pcap -> DTO =====
+
+impl From<PcapAddress> for Address {
+    fn from(a: PcapAddress) -> Self {
+        Address {
+            addr: a.addr,
+            netmask: a.netmask,
+            broadcast_addr: a.broadcast_addr,
+            dst_addr: a.dst_addr,
+        }
+    }
+}
+
+impl From<PcapIfFlags> for IfFlags {
+    fn from(f: PcapIfFlags) -> Self {
+        IfFlags { bits: f.bits() }
+    }
+}
+
+impl From<PcapConnectionStatus> for ConnectionStatus {
+    fn from(s: PcapConnectionStatus) -> Self {
+        match s {
+            PcapConnectionStatus::Unknown => ConnectionStatus::Unknown,
+            PcapConnectionStatus::Connected => ConnectionStatus::Connected,
+            PcapConnectionStatus::Disconnected => ConnectionStatus::Disconnected,
+            PcapConnectionStatus::NotApplicable => ConnectionStatus::NotApplicable,
+        }
+    }
+}
+
+impl From<PcapDeviceFlags> for DeviceFlags {
+    fn from(df: PcapDeviceFlags) -> Self {
+        DeviceFlags {
+            if_flags: df.if_flags.into(),
+            connection_status: df.connection_status.into(),
+        }
+    }
+}
+
+impl From<Device> for NetDevice {
+    fn from(d: Device) -> Self {
+        NetDevice {
+            name: d.name,
+            desc: d.desc,
+            addresses: d.addresses.into_iter().map(Address::from).collect(),
+            flags: d.flags.into(),
+        }
+    }
+}
+
+/// ===== Commande Tauri =====
+
+#[command]
+pub fn get_net_interfaces() -> Result<Vec<NetDevice>, PcapError> {
+    let devices = Device::list()?;
+    Ok(devices.into_iter().map(NetDevice::from).collect())
+}
+
+/// ===== Gestion d'erreur =====
+
+#[derive(Debug, Error)]
+pub enum PcapError {
+    #[error("Impossible de lister les interfaces réseau")]
+    DeviceListError(#[from] pcap::Error),
+}
+
+// sérialise l'erreur comme String vers l'UI
+impl serde::Serialize for PcapError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_ref())
+    }
+}
+```
+
+`src-tauri/src/lib.rs` :
+
+```rust
+mod commandes;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() -> Result<(), tauri::Error> {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .invoke_handler(tauri::generate_handler![commandes::get_net_interfaces])
+        .run(tauri::generate_context!())
+}
+```
+
+---
+
+### 4) Front Vue (Options API) — select + détail (Typescript)
+
+`src/types/NetDevice.ts` :
+
+```ts
+export type Address = {
+  addr: string;
+  netmask?: string | null;
+  broadcast_addr?: string | null;
+  dst_addr?: string | null;
+};
+
+export type IfFlags = { bits: number };
+
+export type ConnectionStatus =
+  | "Unknown"
+  | "Connected"
+  | "Disconnected"
+  | "NotApplicable";
+
+export type DeviceFlags = {
+  if_flags: IfFlags;
+  connection_status: ConnectionStatus;
+};
+
+export type NetDevice = {
+  name: string;
+  desc?: string | null;
+  addresses: Address[];
+  flags: DeviceFlags;
+};
+```
+
+`src/components/NetDevicePicker.vue` :
+
+```vue
+<script lang="ts">
+import { defineComponent } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import type { NetDevice } from "../types/NetDevice";
+
+export default defineComponent({
+  name: "NetDevicePicker",
+  data() {
+    return {
+      netDevices: [] as NetDevice[],
+      selectedName: "" as string,
+      loading: false,
+      errorMsg: null as string | null,
+    };
+  },
+  computed: {
+    selected(): NetDevice | undefined {
+      return this.netDevices.find((d) => d.name === this.selectedName);
+    },
+    hasDevices(): boolean {
+      return this.netDevices.length > 0;
+    },
+  },
+  mounted() {
+    this.refreshDevices();
+  },
+  methods: {
+    async refreshDevices() {
+      this.loading = true;
+      this.errorMsg = null;
+      try {
+        const list = await invoke<NetDevice[]>("get_net_interfaces");
+        this.netDevices = list;
+        if (
+          !this.selectedName ||
+          !this.netDevices.some((d) => d.name === this.selectedName)
+        ) {
+          this.selectedName = this.netDevices[0]?.name ?? "";
+        }
+      } catch (e: unknown) {
+        this.errorMsg = (e as Error)?.message ?? String(e);
+        this.netDevices = [];
+        this.selectedName = "";
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+});
+</script>
+
+<template>
+  <div class="picker">
+    <h2>Interfaces réseau</h2>
+
+    <div class="row">
+      <select v-model="selectedName" :disabled="loading || !hasDevices" @click="refreshDevices">
+        <option v-if="loading" disabled>Chargement…</option>
+        <option v-else-if="!hasDevices" disabled>Aucune interface</option>
+        <option v-for="dev in netDevices" :key="dev.name" :value="dev.name">
+          {{ dev.name }}{{ dev.desc ? ` — ${dev.desc}` : "" }}
+        </option>
+      </select>
+
+      <button @click="refreshDevices" :disabled="loading">🔄</button>
+    </div>
+
+    <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
+
+    <div v-if="selected" class="card">
+      <h3>{{ selected.name }}</h3>
+      <p v-if="selected.desc" class="muted">{{ selected.desc }}</p>
+
+      <details v-if="selected.addresses?.length">
+        <summary>Adresses ({{ selected.addresses.length }})</summary>
+        <ul>
+          <li v-for="(a, i) in selected.addresses" :key="i">
+            {{ a.addr }}
+            <span v-if="a.netmask"> / {{ a.netmask }}</span>
+            <span v-if="a.broadcast_addr"> • bcast: {{ a.broadcast_addr }}</span>
+            <span v-if="a.dst_addr"> • dst: {{ a.dst_addr }}</span>
+          </li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>Statut & flags</summary>
+        <p>Connexion : {{ selected.flags.connection_status }}</p>
+        <p>Flags (bits) : {{ selected.flags.if_flags.bits }}</p>
+      </details>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.picker { max-width: 720px; margin: 24px auto; }
+.row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+select, button { padding: .55rem .75rem; border-radius: 8px; border: 1px solid #ddd; background: #fff; }
+button:disabled, select:disabled { opacity: .6; cursor: not-allowed; }
+.err { color: crimson; margin-top: 8px; }
+.card { margin-top: 12px; padding: 12px; border: 1px solid #e3e3e3; border-radius: 10px; }
+.muted { opacity: .7; }
+</style>
+```
+
+---
+
+### 5) Bonus : décoder `IfFlags.bits` en booléens (patron de code)
+
+Tu peux exposer des flags lisibles côté UI en ajoutant un petit **helper** backend.
+(Chaque environnement/pcap peut avoir des masques différents; garde la logique **côté Rust** pour rester portable.)
+
+```rust
+#[derive(Debug, Serialize)]
+pub struct IfFlagsView {
+    pub bits: u32,
+    pub is_up: bool,
+    pub is_running: bool,
+    pub is_loopback: bool,
+    // ajoute d’autres dérivations selon tes besoins
+}
+
+impl From<PcapIfFlags> for IfFlagsView {
+    fn from(f: PcapIfFlags) -> Self {
+        let bits = f.bits();
+        // ⚠️ Exemple générique : remplace MASK_* par les masques adaptés à ta plateforme/pcap
+        const MASK_UP: u32 = 0x1;
+        const MASK_RUNNING: u32 = 0x40;
+        const MASK_LOOPBACK: u32 = 0x8;
+
+        Self {
+            bits,
+            is_up: (bits & MASK_UP) != 0,
+            is_running: (bits & MASK_RUNNING) != 0,
+            is_loopback: (bits & MASK_LOOPBACK) != 0,
+        }
+    }
+}
+```
+
+> Astuce : commence par exposer **`bits`** (comme ci-dessus), et n’active les booléens qu’une fois que tu as vérifié les masques exacts sur ta cible (Linux, macOS, Windows/Npcap). Tu peux logguer `bits` par interface pour identifier les drapeaux présents.
+
+---
+
+### 6) Lancer en dev
+
+```bash
+deno task tauri dev
+```
+
+---
+
+**En résumé :**
+
+* L’**orphan rule** t’empêche d’ajouter `Serialize` à `pcap::Device`.
+* La **bonne pratique** : créer un **DTO** sérialisable + conversions `From<pcap::*>`.
+* Tu gardes une **API front propre**, stable et portable.
