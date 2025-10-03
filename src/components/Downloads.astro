@@ -52,7 +52,7 @@ try {
           osAssets.map((asset) => (
             <LinkCard
               title={`📥 ${asset.name}`}
-              description={`🗓️ ${new Date(asset.created_at).toLocaleDateString()} • 💾 ${(asset.size / 1_000_000).toFixed(1)} MB • 🔽 ${asset.download_count} téléchargements`}
+              description={`🗓️ ${new Date(asset.created_at).toLocaleDateString()} • 💾 ${(asset.size / 1_000_000).toFixed(1)} MB • 🔽 ${asset.download_count} téléchargements • 🔐 SHA256: ${asset.digest}`}
               href={asset.browser_download_url}
             />
 

@@ -4,11 +4,11 @@ on:
   # Déclenchez le workflow chaque fois que vous poussez vers la branche `main`
   # Vous utilisez un nom de branche différent ? Remplacez `main` par le nom de votre branche
   push:
-    branches: [ main ]
+    branches: [main]
   # Vous permet d'exécuter ce workflow manuellement à partir de l'onglet Actions sur GitHub.
   workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *'  # Tous les jours à 04:00 UTC (06:00 en France l’été)
+    - cron: "0 4 * * *" # Tous les jours à 04:00 UTC (06:00 en France l’été)
 # Autoriser cette tâche à cloner le dépôt et à créer un déploiement de page
 permissions:
   contents: read
@@ -45,8 +45,6 @@ jobs:
           node-version: 20
           package-manager: pnpm@latest
 
-      
-  
   deploy:
     needs: build
     runs-on: ubuntu-latest
