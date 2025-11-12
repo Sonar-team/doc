@@ -15,14 +15,14 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 ## 🧩 1. Capture de paquets (fonctionnalité principale)
 
 ### Contrôle de la capture
-- **Démarrer** la capture réseau <img src="/src/assets/logo_sonar.png" alt="Logo SONAR" style="width: 25px; display: inline; vertical-align: middle; margin-left: 10px;" />
+- **Démarrer** la capture réseau <img src="/doc/assets/logo_sonar.png" alt="Logo SONAR" style="width: 25px; display: inline; vertical-align: middle; margin-left: 10px;" />
 - **Stopper** la capture 🛑
 - **Réinitialiser** (`reset`) la capture et la visualisation associée 🔄
-<img src="/src/assets/topbar.png"  alt="topbar"  /> 
+<img src="/doc/assets/topbar.png"  alt="topbar"  /> 
 
 ### Visualisation en temps réel
 - Affichage en direct des paquets capturés
-<img src="/src/assets/realtime.png"  alt="Realtime frames"  /> 
+<img src="/doc/assets/realtime.png"  alt="Realtime frames"  /> 
 
 - Compteurs en temps réel :
   - Nombre de paquets lus 📥
@@ -30,13 +30,13 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
   - Nombre de paquets ratés (par le code ❌ ou la carte réseau 🚫)
 - Indicateur de **saturation** (alerte en cas de perte de paquets 🚨)
 - Chronomètre de relevé (durée de capture ⏱️)
-<img src="/src/assets/status.png"  alt="status bar"  /> 
+<img src="/doc/assets/status.png"  alt="status bar"  /> 
 
 
 ### Filtrage
 - Filtrage **à la capture** (BPF ou équivalent)
 - ⚠️ Aucun filtrage post-capture : l’utilisateur doit trier ses données dans le relevé exporté
-<img src="/src/assets/filters.png"  alt="filter"  /> 
+<img src="/doc/assets/filters.png"  alt="filter"  /> 
 
 
 ### Configuration avancée ⚙️

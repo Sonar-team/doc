@@ -5,6 +5,33 @@ description: Historique des versions de l'application SONAR.
 
 # 📝 Changelog
 
+## [3.4.1] - 2025-11-07
+
+### ✨ Fonctionnalités
+
+- Ajout de la **labellisation des nœuds** : possibilité d’associer un label lisible (ex. `SRV-DB01`, `Firewall-Est`, etc.) à chaque adresse détectée.  
+  Les labels sont visibles dans la vue graphique, exportés dans le CSV et modifiables sans altérer les données brutes.
+
+- Nouveau **moteur de filtrage des flux** (vue graphique + tableau) avec filtrage par :
+  - adresse source / destination  
+  - protocole (L3/L4)  
+  - ports  
+  - labels  
+  - direction du trafic  
+
+  Le filtrage s’applique en temps réel et ne nécessite pas de relancer la capture.
+
+### 🛠 Améliorations
+
+- Optimisation du rendu graphique lors de la mise à jour des labels.
+- Stabilisation du zoom adaptatif après reset de la capture.
+
+### 📦 Export
+
+- Export PNG mis à jour pour afficher correctement les labels des nœuds.
+
+---
+
 ## [2.3.2] - 2025-06-25
 
 ### ✨ Fonctionnalités
