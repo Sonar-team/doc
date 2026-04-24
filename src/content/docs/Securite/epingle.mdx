@@ -1,0 +1,274 @@
+---
+title: Épinglage des dépendances
+description: Épingler les dépendances du projet
+---
+
+# 🛡️ Étape 1 — Épinglage des dépendances (Dependency Pinning)
+
+## 🎯 Objectif
+
+Garantir que toute compilation de SONAR repose sur un **ensemble de dépendances strictement déterminé, reproductible et auditable**, indépendamment :
+
+* du poste de compilation
+* de la connectivité réseau
+* du moment de compilation
+
+Sans cette étape :
+
+* le build n’est **pas déterministe**
+* la chaîne de confiance est **cassée**
+* la signature (Cosign) perd de sa valeur
+
+---
+
+## 📦 Périmètre
+
+L’épinglage couvre :
+
+* dépendances Rust (directes + transitives)
+* dépendances Deno (modules distants)
+* résolution des versions
+* sources des dépendances
+* configuration de build
+
+---
+
+## 🔐 Règles obligatoires
+
+### 1. Lockfile Rust obligatoire
+
+Le fichier `Cargo.lock` doit :
+
+* être **présent**
+* être **versionné**
+* ne jamais être modifié implicitement
+* ne pas comporter de '^' dans les numero de version 
+
+toutes les versions sont fixes (pas de ^, pas de ~)
+→ donc pas de supply chain drift automatique
+
+```bash
+cargo build --locked
+```
+
+Mode strict recommandé :
+
+```bash
+cargo build --frozen
+```
+
+---
+
+### 2. Interdiction de résolution dynamique
+
+Toute compilation doit être :
+
+* **sans accès réseau**
+* **sans mise à jour implicite**
+
+👉 Toute tentative de téléchargement doit faire échouer le build
+
+---
+
+### 3. Mise à jour contrôlée des dépendances
+
+Les mises à jour doivent être :
+
+* explicites (`cargo update`)
+* tracées (commit dédié)
+* validées (review)
+* testées offline
+
+---
+
+## 🦀 Rust — Implémentation
+
+### Génération du lockfile
+
+```bash
+cargo generate-lockfile
+```
+
+---
+
+### Préchargement des dépendances
+
+```bash
+cargo fetch --locked
+```
+
+---
+
+### Vendorisation (obligatoire pour offline)
+
+```bash
+cargo vendor vendor > .cargo/config.toml
+```
+
+---
+
+### Configuration attendue
+
+```toml
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
+```
+
+---
+
+### Build sécurisé
+
+```bash
+cargo build --frozen
+```
+
+---
+
+## 🟡 Deno — Implémentation
+
+### Génération du lockfile
+
+Création du fichier `deno.json` avec les éléments suivants :
+
+```json
+{
+  "vendor": true,
+  "lock": {
+    "frozen": true
+  },
+  "nodeModulesDir": "auto"
+}
+
+```
+ainsi : 
+vendor: true → tu caches les dépendances localement → excellent pour air-gapped
+lock.frozen: true → tu empêches toute dérive de dépendance → très bon
+
+---
+
+### Préchargement du cache
+
+```bash
+set DENO_DIR=.deno-cache
+deno cache deno.json
+```
+deno install --frozen
+---
+
+## ⚠️ Contraintes Deno
+
+Le build doit :
+
+* ne contenir **aucun import dynamique non figé**
+* ne jamais déclencher de téléchargement implicite
+
+---
+
+## 📁 Artefacts à versionner
+
+Obligatoires dans le dépôt :
+
+* `Cargo.lock`
+* `.cargo/config.toml`
+* `vendor/`
+* `deno.lock`
+* `deno.json`
+
+---
+
+## ❌ Interdictions
+
+* supprimer `Cargo.lock`
+* builder sans `--locked` ou `--frozen`
+* dépendre de crates non vendored
+* utiliser Deno sans `--cached-only`
+* importer des dépendances dynamiques non figées
+
+---
+
+## ✅ Critères de validation
+
+L’étape est validée si :
+
+* build réussi **sans réseau**
+* aucune tentative de téléchargement
+* `cargo build --frozen` passe
+* aucune modification de `Cargo.lock` pendant le build
+
+---
+
+## 🔄 Workflow de mise à jour
+
+{/* ```mermaid
+flowchart TD
+    A[Besoin de mise a jour] --> B[cargo update]
+    B --> C[Regeneration Cargo.lock]
+    C --> D[cargo vendor]
+    D --> E[Regeneration config.toml]
+    E --> F[Mise a jour deno.lock]
+    F --> G[Test offline]
+    G --> H[Validation securite]
+    H --> I[Commit + review]
+```
+
+---
+
+## 🧪 Test obligatoire (poste isolé)
+
+```mermaid
+flowchart TD
+    A[Couper reseau] --> B[Supprimer caches globaux]
+    B --> C[Cloner projet]
+    C --> D[Build cargo --frozen]
+    D --> E[Build deno cached-only]
+    E --> F[Succes]
+```*/}
+
+---
+
+## 🧠 Décision d’architecture
+
+Choix retenu :
+
+➡️ **Vendoring ciblé (`cargo vendor`)**
+
+Motifs :
+
+* plus simple à auditer
+* reproductible
+* compatible offline strict
+* pas besoin de miroir crates.io
+
+---
+
+## 🔐 Impact sécurité
+
+Cette étape garantit :
+
+* reproductibilité du build
+* traçabilité des dépendances
+* résistance aux attaques supply chain
+* base fiable pour signature Cosign
+
+---
+
+## 🔎 Points de contrôle
+
+Avant étape suivante :
+
+* [ ] Cargo.lock figé
+* [ ] vendor présent
+* [ ] config.toml valide
+* [ ] deno.lock présent
+* [ ] cache Deno généré
+* [ ] build offline validé
+
+---
+
+## ➡️ Étape suivante
+
+👉 **Étape 2 — Gel de l’environnement de compilation (toolchain & OS)**
+
