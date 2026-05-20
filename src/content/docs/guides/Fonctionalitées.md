@@ -35,7 +35,7 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 
 ### Filtrage
 - Filtrage **à la capture** (BPF ou équivalent)
-- ⚠️ Aucun filtrage post-capture : l’utilisateur doit trier ses données dans le relevé exporté
+- Filtrage **dans la matrice et la vue graphique** par adresses, protocoles, ports, labels et direction du trafic
 <img src="/doc/assets/filters.png"  alt="filter"  /> 
 
 
@@ -73,6 +73,13 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
   - Vue globale → nœuds et liens principaux
   - Zoom fort → affichage des **ports** et **protocoles**
 
+### Protocoles et analyse applicative
+
+- Décodage des couches Ethernet, IPv4, IPv6, ARP, ICMP, TCP et UDP
+- Visibilité applicative sur **HTTP**, **DNS**, **TLS/SSL**
+- Support des flux industriels avec **Modbus/TCP**
+- Détection **OPC UA** dans les versions récentes du parser
+
 ---
 
 ## 📂 3. Import et conversion
@@ -80,6 +87,7 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 - **Import de fichiers PCAP 📄**
 - Conversion automatique du PCAP en **matrice de flux**
 - Visualisation et édition de la matrice importée (identique à une capture live)
+- Indicateur de chargement pendant l’import des captures volumineuses
 
 ---
 
@@ -97,13 +105,22 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 
 - Panneau **À propos** :
   - Version de l’application
+  - Versions de build canonique (**Rust**, **Node.js**, **Deno**, **Tauri CLI**)
   - Contact en cas d’incident
   - Mentions légales / licence
 - Accès à la **documentation** utilisateur (guide d’utilisation, support)
 
 ---
 
-## ⚙️ 6. Monitoring et performance
+## 🖥️ 6. Exécution et usage avancé
+
+- Sélecteur d’interface réseau personnalisé
+- Mode **CLI / headless** pour l’exécution sans interface graphique
+- Intégration Windows autour de **Npcap** pour la capture
+
+---
+
+## ⚙️ 7. Monitoring et performance
 
 - Surveillance de l’utilisation **CPU**
 - Compteurs techniques :
@@ -114,16 +131,15 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 
 ---
 
-## 🚧 7. Règles de fonctionnement
+## 🚧 8. Règles de fonctionnement
 
-- Les filtres ne s’appliquent **que pendant la capture**
 - Le `reset` efface la capture et la visualisation graphique associée
 - Les labels utilisateurs sont persistés dans les exports CSV pour traçabilité
 - En cas de forte charge, SONAR prévient l’utilisateur des pertes potentielles de paquets
 
 ---
 
-## 🔍 8. Points techniques et qualité
+## 🔍 9. Points techniques et qualité
 
 - Cohérence entre buffers (libpcap / channel / pool)
 - Tests de charge (validation des compteurs de pertes)
@@ -146,5 +162,4 @@ L’application ne tire **aucune conclusion** automatique : elle restitue fidèl
 > **Langages :** Rust, Tauri, Vue.js  
 > **Licence :** AGPLv3  
 > **Organisation :** ERDT-CYBER / SSF Toulon
-
 

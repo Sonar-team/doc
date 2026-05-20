@@ -1,75 +1,66 @@
 ---
-title: Installation de SONAR
-description: Guide d'installation de SONAR sur différents systèmes d'exploitation.
+title: SONAR Installation
+description: Installation guide for SONAR on supported operating systems.
 ---
 
-## Installation de SONAR
+## Install SONAR
 
-Ce guide vous accompagne dans l'installation de SONAR en fonction de votre
-système d'exploitation. Choisissez le format correspondant à votre
-environnement.
+This guide explains how to install SONAR depending on your operating system.
 
-### Windows (MSI)
+### Windows (NSIS or MSI)
 
-1. **Téléchargement** :\
-   Téléchargez le fichier MSI depuis la [page de téléchargement](/doc/download).
-2. **Installation** :
-   - Double-cliquez sur le fichier `.msi` téléchargé.
-   - Suivez les instructions de l'assistant d'installation.
-   - Une connexion Internet peut être requise pour certaines dépendances.
-3. **Dépendance requise** :\
-   Installez [Npcap](https://npcap.com/dist/npcap-1.81.exe) si vous souhaitez
-   capturer du trafic réseau.
+1. **Download**:
+   Get the Windows installer from the [download page](/doc/en/download).
+2. **Install**:
+   Double-click the downloaded `.exe` or `.msi` file and follow the setup wizard.
+3. **Required dependency**:
+   Install [Npcap 1.87](https://npcap.com/dist/npcap-1.87.exe) if you want to capture live network traffic.
 
-### Linux (DEB et RPM)
+### Linux (AppImage, DEB and RPM)
+
+Make sure `libpcap` is available on the host before running live capture.
+
+```bash
+sudo apt install libpcap-dev
+```
 
 #### Debian / Ubuntu (.deb)
 
-1. **Téléchargement** :\
-   Récupérez le package `.deb` depuis la
-   [page de téléchargement](/doc/download).
-2. **Installation** :\
-   Exécutez la commande suivante dans un terminal :
-   ```bash
-   sudo dpkg -i sonar_x64.deb
-   ```
-3. **Dépendances** :\
-   Si des dépendances sont manquantes, corrigez-les avec :
-   ```bash
-   sudo apt-get install -f
-   ```
+```bash
+sudo apt install ./sonar*.deb
+```
 
 #### Fedora / CentOS / RHEL (.rpm)
 
-1. **Téléchargement** :\
-   Téléchargez le fichier `.rpm` depuis la
-   [page de téléchargement](/doc/download).
-2. **Installation** :\
-   Utilisez `dnf` ou `yum` selon votre système :
-   ```bash
-   sudo dnf install sonar_x64.rpm
-   ```
-   ou
-   ```bash
-   sudo yum install sonar_x64.rpm
-   ```
+```bash
+sudo dnf install ./sonar*.rpm
+```
+
+#### Portable run (.AppImage)
+
+```bash
+chmod +x SONAR*.AppImage
+./SONAR*.AppImage
+```
 
 ### macOS (DMG)
 
-1. **Téléchargement** :\
-   Récupérez le fichier `.dmg` depuis la
-   [page de téléchargement](/doc/download).
-2. **Installation** :
-   - Double-cliquez sur le fichier `.dmg`.
-   - Faites glisser l'application SONAR dans le dossier `Applications`.
-3. **Première exécution** :\
-   Si macOS bloque l'application, allez dans
-   `Préférences Système > Sécurité et confidentialité`, puis autorisez SONAR à
-   s'exécuter.
+1. **Download**:
+   Get the `.dmg` file from the [download page](/doc/en/download).
+2. **Install**:
+   Open the disk image and drag SONAR into `Applications`.
+3. **First launch**:
+   If macOS blocks the app, allow it from the system security settings.
 
-## Ressources supplémentaires
+### CLI / headless mode
 
-- Consultez la [documentation technique](/doc/guides/example/) pour des détails
-  avancés.
-- En cas de problème, ouvrez un ticket sur
-  [GitHub](https://github.com/Sonar-team).
+Recent SONAR versions also expose a no-window mode for automated workflows.
+
+```bash
+sonar --headless
+```
+
+## Additional resources
+
+- See the [development prerequisites](/doc/en/developpement/prerequis) for local setup details.
+- Report issues on [GitHub](https://github.com/Sonar-team/Sonar_desktop_app).

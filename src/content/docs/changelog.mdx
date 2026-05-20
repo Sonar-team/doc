@@ -5,6 +5,133 @@ description: Historique des versions de l'application SONAR.
 
 # 📝 Changelog
 
+## [3.13.8] - 2026-05-18
+
+### 🛠 Corrections
+
+- Correctif macOS sur le script d’upload des bundles Sigstore pour rester compatible avec Bash 3.2.
+- Mise à jour de version de SONAR en **3.13.8**.
+
+---
+
+## [3.13.7] - 2026-05-18
+
+### 🔐 Chaîne de confiance
+
+- Signature des artefacts de release avec `cosign sign-blob` et identité OIDC GitHub Actions.
+- Publication des bundles Sigstore `.sigstore.json` dans la release GitHub et comme artefacts CI.
+
+### 🛠 Corrections
+
+- Remplacement de `subject-checksums` par `subject-path` pour éviter des erreurs de parsing sur Windows.
+- Mise à jour de version de SONAR en **3.13.7**.
+
+---
+
+## [3.13.6] - 2026-05-18
+
+### 🛠 Corrections
+
+- Normalisation du fichier d’attestation Windows au format `shasum` attendu.
+- Ajout d’une validation stricte des digests SHA256 avant génération du manifest.
+- Mise à jour de version de SONAR en **3.13.6**.
+
+---
+
+## [3.13.5] - 2026-05-18
+
+### ✨ Améliorations
+
+- Affichage des versions de build canonique dans le menu `À propos` : Rust, Node.js, Deno et Tauri CLI.
+- Injection des versions de build depuis `config/build-versions.env`.
+
+### 🔐 Chaîne de confiance
+
+- Génération d’attestations de provenance pour les artefacts de release.
+- Ajout d’un manifest SHA256 dédié aux sujets d’attestation.
+
+---
+
+## [3.13.4] - 2026-05-07
+
+### 🛠 Corrections
+
+- Publication des hashes SHA256 des binaires et bundles directement dans le message de release GitHub.
+- Extraction de la génération des hashes et de la mise à jour du message de release dans des scripts CI dédiés.
+- Mise à jour de version de SONAR en **3.13.4**.
+
+---
+
+## [3.13.3] - 2026-05-07
+
+### 🛠 Corrections
+
+- Génération des fichiers `SHA256SUMS-*` depuis tous les répertoires `bundle` produits sous `src-tauri/target`.
+- Compatibilité macOS pour le calcul SHA256 via `shasum -a 256`.
+- Mise à jour de version de SONAR en **3.13.3**.
+
+---
+
+## [3.13.2] - 2026-05-07
+
+### 🛠 Corrections
+
+- Le contrôle reproductible reste bloquant pour le binaire SONAR, mais un bundle `.deb` non reproductible devient un diagnostic non bloquant.
+- Mise à jour de version de SONAR en **3.13.2**.
+
+---
+
+## [3.13.1] - 2026-05-07
+
+### 🛠 Corrections
+
+- Inclusion complète des fichiers `diagram.svg` et `diagram.png` de `libdbus-sys` pour éviter les erreurs de checksum Cargo en CI.
+- Mise à jour de version de SONAR en **3.13.1**.
+
+---
+
+## [3.13.0] - 2026-05-07
+
+### ✨ Améliorations
+
+- Alignement des versions dans `package.json`, `tauri.conf.json`, `Cargo.toml` et `Cargo.lock`.
+- Mise à jour de version de SONAR en **3.13.0**.
+
+### 🔎 Analyse protocolaire
+
+- Mise à jour de `packet_parser` en **1.3.0** pour ajouter la détection du protocole **OPC UA**.
+
+---
+
+## [3.12.3] - 2026-04-28
+
+### 🧪 Build / Reproductibilité
+
+- Verrouillage explicite de la toolchain Rust sur **1.95.0**.
+- Ajout de `rust-version = "1.95.0"` dans le manifest Cargo.
+- Verrouillage de **Deno 2.7.13** dans le pipeline de release et le build Docker.
+- Déclaration de **Node 24.14.0** comme version cible dans `package.json`.
+- Ajout d’un `.dockerignore` pour stabiliser le contexte de build.
+
+### 🛠 Corrections
+
+- Correction de la condition du target macOS dans le workflow de publication.
+
+---
+
+## [3.10.0] - 2026-01-08
+
+### ✨ Fonctionnalités
+
+- Ajout du parsing **Modbus/TCP** au niveau applicatif.
+- Introduction d’un mode **headless / CLI** pour exécuter SONAR sans interface graphique.
+
+### ✨ Améliorations
+
+- Mise à jour et amélioration de l’installateur **Npcap** pour Windows.
+
+---
+
 ## [3.4.1] - 2025-11-07
 
 ### ✨ Fonctionnalités

@@ -5,52 +5,54 @@ sidebar:
   order: 401
 ---
 
-# Projet SONAR - Instructions de développement sous Linux
+# Projet SONAR - Préparer un environnement de développement Linux
 
-Bienvenue sur le projet **SONAR** ! Ce document explique comment préparer votre environnement de développement sous Linux.
+Ce document couvre les prérequis actuellement utilisés par le dépôt `Sonar_desktop_app`.
 
----
+## Versions cibles
 
-## Prérequis
+- **Rust** `1.95.0`
+- **Node.js** `24.14.0`
+- **Deno** `2.7.13`
+- **Tauri CLI** `2.11.1`
+- **libpcap** pour la capture réseau
 
-Avant de cloner et de lancer le projet, assurez-vous d'avoir installé les outils suivants :
-
-- **Rust** (toolchain stable)
-- **Deno**
-- **Tauri** ([prérequis officiels ici](https://v2.tauri.app/fr/start/prerequisites/))
-- **libpcap** (bibliothèque système nécessaire pour la capture réseau)
-
-
-## Installation
+## Dépendances système
 
 ### 1. Installer Rust
 
-Rustup est le moyen recommandé d'installer Rust.
-
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-rustup default stable
+source "$HOME/.cargo/env"
+rustup toolchain install 1.95.0
+rustup default 1.95.0
 ```
 
-### 2. Installer Deno
+### 2. Installer Node.js
+
+Le dépôt cible **Node 24.14.0**. Utilisez de préférence `nvm`, `fnm` ou votre gestionnaire habituel.
+
+```bash
+nvm install 24.14.0
+nvm use 24.14.0
+```
+
+### 3. Installer Deno
 
 ```bash
 curl -fsSL https://deno.land/install.sh | sh
-# Pensez à ajouter Deno à votre PATH si besoin.
+deno --version
 ```
 
-### 3. Installer libpcap
+### 4. Installer libpcap
 
-libpcap est obligatoire pour la capture de paquets. Installez-la selon votre distribution :
-
-- **Ubuntu/Debian**
+- **Ubuntu / Debian**
   ```bash
   sudo apt update
   sudo apt install libpcap-dev
   ```
 
-- **Fedora**
+- **Fedora / RHEL**
   ```bash
   sudo dnf install libpcap-devel
   ```
@@ -60,31 +62,26 @@ libpcap est obligatoire pour la capture de paquets. Installez-la selon votre dis
   sudo pacman -S libpcap
   ```
 
+### 5. Installer les prérequis Tauri
 
-## Développement
+Suivez la [documentation officielle Tauri v2](https://v2.tauri.app/start/prerequisites/) pour les dépendances GTK / WebKit selon votre distribution.
 
-### Cloner le projet
-
-```bash
-git clone https://votre-repo.git
-cd votre-repo
-```
-
-### Lancer en mode développement
+## Cloner et lancer le projet
 
 ```bash
-deno install 
+git clone https://github.com/Sonar-team/Sonar_desktop_app.git
+cd Sonar_desktop_app
+npm install
 deno task tauri dev
 ```
 
-## Notes importantes
+## Notes utiles
 
-- En cas d'erreur `cannot find -lpcap`, assurez-vous que **libpcap-dev** est bien installé.
-- Utilisez la dernière version stable de Rust.
-- Deno est utilisé pour gérer certaines fonctionnalités du frontend.
-- Certaines distributions peuvent nécessiter l'installation de bibliothèques GTK ou WebKit (voir la page des [prérequis de Tauri](https://v2.tauri.app/fr/start/prerequisites/)).
+- En cas d'erreur `cannot find -lpcap`, vérifiez que `libpcap-dev` ou `libpcap-devel` est bien installé.
+- La version Rust n'est plus simplement "stable" : le dépôt cible explicitement `1.95.0`.
+- Le projet utilise à la fois **Node.js** et **Deno**.
+- Pour exécuter la capture hors `root`, appliquez les capacités nécessaires au binaire Linux :
 
----
-
-Bon développement sur **SONAR v2** ! 🚀
-
+```bash
+sudo setcap cap_net_raw,cap_net_admin=eip path/to/sonar
+```
