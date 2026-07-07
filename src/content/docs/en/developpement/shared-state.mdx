@@ -1,0 +1,130 @@
+---
+title: Shared state and concurrency in Tauri
+description: How SONAR shares state across commands, and the lock-ordering rule that prevents deadlocks.
+sidebar:
+  order: 404
+---
+
+# 🔐 Shared state and concurrency
+
+SONAR keeps several live states (flow matrix, graph, labels…) that **several
+Tauri commands manipulate in parallel**. This page explains how that state is
+shared, and above all the **lock-ordering rule** that prevents a nasty class of
+bug: the **deadlock**.
+
+This is a low-visibility but critical topic: a deadlock produces no error, it
+**silently freezes the application**.
+
+---
+
+## 🧩 The states managed by Tauri
+
+At startup the application registers five shared states
+(`src-tauri/src/lib.rs`), each protected by a `Mutex` and shared through an
+`Arc`:
+
+```rust
+.manage(Arc::new(Mutex::new(CaptureState::new())))  // capture state
+.manage(Arc::new(Mutex::new(FlowMatrix::new())))    // flow matrix
+.manage(Arc::new(Mutex::new(GraphData::new())))     // graph
+.manage(Arc::new(Mutex::new(PcInfoLabel::new())))   // machine label info
+.manage(Arc::new(Mutex::new(LabelStore::new())))    // imported label store
+```
+
+- **`Arc`** (*Atomic Reference Counted*) allows the same data to be shared
+  across multiple threads.
+- **`Mutex`** guarantees that **only one thread at a time** accesses the data:
+  to read or write, you must first `lock()`.
+
+A command simply declares the states it needs, and Tauri injects them:
+
+```rust
+#[tauri::command(async)]
+pub fn import_matrix_files(
+    matrice: State<'_, Arc<Mutex<FlowMatrix>>>,
+    graph: State<'_, Arc<Mutex<GraphData>>>,
+    label_store: State<'_, Arc<Mutex<LabelStore>>>,
+    // ...
+) -> Result<(), CaptureStateError> { /* ... */ }
+```
+
+---
+
+## ⚠️ The trap: the ABBA deadlock
+
+The problem arises as soon as an operation needs **several locks at once**.
+Consider two commands running in parallel (`async` Tauri commands run on
+distinct threads):
+
+```
+Thread 1 (command A)          Thread 2 (command B)
+  lock(matrix)       ✅          lock(label_store) ✅
+  lock(label_store)  ⏳ waits    lock(matrix)      ⏳ waits
+       ▲                                ▲
+       └──────── each waits for the lock the other holds ────────┘
+                        → permanent freeze
+```
+
+Each thread holds one lock and waits for the one the other holds. Neither will
+ever release: **the app is frozen, with no error message**. This is called an
+**ABBA** deadlock (one thread takes A then B, the other B then A).
+
+---
+
+## ✅ The rule: a single lock order
+
+The fix is simple but must be **followed everywhere**: all commands acquire the
+locks in **the same order**. If everyone takes A **before** B, the ABBA
+situation above can no longer occur.
+
+In SONAR, the canonical order is:
+
+```
+matrix  →  graph  →  label_store
+```
+
+Any function that needs several of these locks takes them in this order.
+Example in `import_matrix_files`:
+
+```rust
+// Same lock order as convert_from_pcap_list and net_capture
+// (matrix -> graph -> label_store) to avoid an ABBA deadlock.
+let mut matrice_guard = matrice.lock().unwrap();
+let mut graph_guard = graph.lock().unwrap();
+let label_store_guard = label_store.lock().unwrap();
+```
+
+The comment in the code is not decorative: it restates the constraint so that a
+future change does not reintroduce the bug by reordering the `lock()` calls.
+
+---
+
+## 🧭 Practical rules for contributors
+
+When you write or modify a command that touches several states:
+
+1. **Respect the canonical order** `matrix → graph → label_store`. If you only
+   need a subset, keep the relative order (e.g. `matrix` before `label_store`).
+2. **Release locks as early as possible.** A lock is freed when its guard goes
+   out of scope (`drop`). Narrow the scope with a `{ ... }` block when you only
+   need a state briefly — this reduces the contention window.
+3. **Do expensive work outside the locks.** For instance, read and parse the CSV
+   files **before** taking the locks: that way an invalid file fails without ever
+   blocking the current matrix, and locks are held as briefly as possible.
+4. **Never hold a lock across an `await`**, nor across a call that might itself
+   re-lock the same mutex (re-entrancy → immediate freeze).
+
+---
+
+## 💡 Why this model rather than one big lock?
+
+We could put everything behind a single `Mutex`. But separate locks let
+independent operations (e.g. reading the graph while another task updates the
+label store) make progress in parallel. The price to pay is precisely this
+**lock-ordering discipline** — hence the importance of documenting it.
+
+---
+
+## See also
+
+- [Capturing network packets in Rust with Tauri](/doc/en/developpement/capture/)

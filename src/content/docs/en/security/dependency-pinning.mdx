@@ -1,0 +1,276 @@
+---
+title: Dependency pinning
+description: Pin the project's dependencies
+sidebar:
+    order: 1
+---
+
+# 🛡️ Step 1 — Dependency pinning
+
+## 🎯 Goal
+
+Ensure that every compilation of SONAR relies on a **strictly determined,
+reproducible and auditable set of dependencies**, regardless of:
+
+* the build machine
+* network connectivity
+* the moment of compilation
+
+Without this step:
+
+* the build is **not deterministic**
+* the chain of trust is **broken**
+* the (Cosign) signature loses its value
+
+---
+
+## 📦 Scope
+
+Pinning covers:
+
+* Rust dependencies (direct + transitive)
+* Deno dependencies (remote modules)
+* version resolution
+* dependency sources
+* build configuration
+
+---
+
+## 🔐 Mandatory rules
+
+### 1. Mandatory Rust lockfile
+
+The `Cargo.lock` file must:
+
+* be **present**
+* be **versioned**
+* never be modified implicitly
+* not contain '^' in version numbers
+
+all versions are fixed (no ^, no ~)
+→ so no automatic supply-chain drift
+
+```bash
+cargo build --locked
+```
+
+Recommended strict mode:
+
+```bash
+cargo build --frozen
+```
+
+---
+
+### 2. No dynamic resolution
+
+Every compilation must be:
+
+* **without network access**
+* **without implicit updates**
+
+👉 Any download attempt must fail the build
+
+---
+
+### 3. Controlled dependency updates
+
+Updates must be:
+
+* explicit (`cargo update`)
+* traced (dedicated commit)
+* validated (review)
+* tested offline
+
+---
+
+## 🦀 Rust — Implementation
+
+### Generating the lockfile
+
+```bash
+cargo generate-lockfile
+```
+
+---
+
+### Prefetching dependencies
+
+```bash
+cargo fetch --locked
+```
+
+---
+
+### Vendoring (mandatory for offline)
+
+```bash
+cargo vendor vendor > .cargo/config.toml
+```
+
+---
+
+### Expected configuration
+
+```toml
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
+```
+
+---
+
+### Secure build
+
+```bash
+cargo build --frozen
+```
+
+---
+
+## 🟡 Deno — Implementation
+
+### Generating the lockfile
+
+Create the `deno.json` file with the following elements:
+
+```json
+{
+  "vendor": true,
+  "lock": {
+    "frozen": true
+  },
+  "nodeModulesDir": "auto"
+}
+
+```
+so:
+vendor: true → you cache dependencies locally → excellent for air-gapped
+lock.frozen: true → you prevent any dependency drift → very good
+
+---
+
+### Prefetching the cache
+
+```bash
+set DENO_DIR=.deno-cache
+deno cache deno.json
+```
+deno install --frozen
+---
+
+## ⚠️ Deno constraints
+
+The build must:
+
+* contain **no unpinned dynamic import**
+* never trigger an implicit download
+
+---
+
+## 📁 Artifacts to version
+
+Mandatory in the repository:
+
+* `Cargo.lock`
+* `.cargo/config.toml`
+* `vendor/`
+* `deno.lock`
+* `deno.json`
+
+---
+
+## ❌ Prohibitions
+
+* deleting `Cargo.lock`
+* building without `--locked` or `--frozen`
+* depending on non-vendored crates
+* using Deno without `--cached-only`
+* importing unpinned dynamic dependencies
+
+---
+
+## ✅ Validation criteria
+
+The step is validated if:
+
+* build succeeds **without network**
+* no download attempt
+* `cargo build --frozen` passes
+* no modification of `Cargo.lock` during the build
+
+---
+
+## 🔄 Update workflow
+
+{/* ```mermaid
+flowchart TD
+    A[Need an update] --> B[cargo update]
+    B --> C[Regenerate Cargo.lock]
+    C --> D[cargo vendor]
+    D --> E[Regenerate config.toml]
+    E --> F[Update deno.lock]
+    F --> G[Offline test]
+    G --> H[Security validation]
+    H --> I[Commit + review]
+```
+
+---
+
+## 🧪 Mandatory test (isolated machine)
+
+```mermaid
+flowchart TD
+    A[Cut network] --> B[Delete global caches]
+    B --> C[Clone project]
+    C --> D[Build cargo --frozen]
+    D --> E[Build deno cached-only]
+    E --> F[Success]
+```*/}
+
+---
+
+## 🧠 Architecture decision
+
+Chosen option:
+
+➡️ **Targeted vendoring (`cargo vendor`)**
+
+Reasons:
+
+* simpler to audit
+* reproducible
+* compatible with strict offline
+* no need for a crates.io mirror
+
+---
+
+## 🔐 Security impact
+
+This step guarantees:
+
+* build reproducibility
+* dependency traceability
+* resistance to supply-chain attacks
+* a reliable basis for Cosign signing
+
+---
+
+## 🔎 Checkpoints
+
+Before the next step:
+
+* [ ] Cargo.lock frozen
+* [ ] vendor present
+* [ ] config.toml valid
+* [ ] deno.lock present
+* [ ] Deno cache generated
+* [ ] offline build validated
+
+---
+
+## ➡️ Next step
+
+👉 **Step 2 — Freezing the build environment (toolchain & OS)**

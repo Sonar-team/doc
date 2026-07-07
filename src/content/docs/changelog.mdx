@@ -5,6 +5,62 @@ description: Historique des versions de l'application SONAR.
 
 # 📝 Changelog
 
+## [4.1.0] - 2026-07-07
+
+### ✨ Améliorations
+
+- Import multiple de matrices CSV : plusieurs matrices exportées peuvent être sélectionnées puis fusionnées en une seule analyse.
+- Fusion automatique des flux identiques lors de l’import : cumul du nombre de paquets, cumul des octets et conservation de la date `last_seen` la plus récente.
+- Panneau d’import de matrices amélioré : les fichiers sélectionnés sont listés avant ouverture et peuvent être effacés avant import.
+- Nouveau menu **À propos** avec accès séparé aux informations de version et au changelog embarqué.
+- Affichage de la version **Npcap** utilisée dans les informations de version.
+
+### 🛠 Corrections
+
+- Erreurs d’import de labels CSV enrichies : numéro de ligne, ligne complète et compteur total d’erreurs, pour faciliter la correction des fichiers.
+- Tolérance accrue de l’import de labels aux colonnes supplémentaires et aux colonnes finales vides.
+
+### 🔧 Maintenance
+
+- Ajout de `NPCAP_VERSION` dans les versions de build contrôlées par la CI.
+- Mise à jour de version de SONAR en **4.1.0**.
+
+---
+
+## [4.0.1] - 2026-07-06
+
+### 🔧 Maintenance
+
+- Mise à jour de **Npcap** embarqué en **1.88** pour les bundles Windows et le smoke runtime Windows.
+- Activation d’une CSP stricte sur le webview.
+- Mise à jour de version de SONAR en **4.0.1**.
+
+---
+
+## [4.0.0] - 2026-07-05
+
+### 💥 Changements majeurs
+
+- Mise à jour de `packet_parser` en **2.0.2** : paquets typés, détection PostgreSQL par heuristique de payload et nouveaux parseurs applicatifs.
+- Refonte du moteur de capture : nouveaux événements IPC `graphBatch` et `stopped`, nouveau champ `app_dropped` dans l’événement `stats`.
+
+### ✨ Améliorations
+
+- Pool de buffers à allocation paresseuse (2 KiB standard / snaplen jumbo) : mémoire de capture réduite de ~640 Mio préalloués à quelques Mio selon la charge réelle (bench : RSS 464 → 13 Mio, débit ×2,7).
+- Mises à jour du graphe coalescées par nœud/arête et envoyées par lot, au lieu d’un événement IPC par paquet.
+- Pertes applicatives comptées (pool épuisé / canal plein) et affichées dans la barre de statut (⚠️) : visibilité sur l’exhaustivité de la capture sous forte charge.
+
+### 🛠 Corrections
+
+- Les octets du premier paquet de chaque flux étaient comptés une fois au lieu de deux dans la matrice et le CSV exporté.
+
+### 🔧 Maintenance
+
+- Suppression du thread de traitement CLI dupliqué : le mode headless partage le pipeline principal.
+- Mise à jour de version de SONAR en **4.0.0**.
+
+---
+
 ## [3.13.8] - 2026-05-18
 
 ### 🛠 Corrections

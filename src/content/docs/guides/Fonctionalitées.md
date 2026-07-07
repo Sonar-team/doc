@@ -63,6 +63,18 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 ### Édition et labeling
 - Possibilité d’**éditer les nœuds** du graphe pour leur attribuer des **labels** (ex. `serveur 1`)
 - Ces labels sont enregistrés dans une **colonne dédiée** du CSV exporté
+- **Import de labels par fichier CSV** au format `mac, ip, label` (les colonnes
+  supplémentaires sont fusionnées dans le label)
+- **Labellisation à toutes les étapes de l’analyse :**
+  - **Pré-labellisation** : importez vos labels avant la capture, ils sont
+    appliqués aux flux dès leur première apparition
+  - **Post-labellisation** : importez ou complétez vos labels après coup, les
+    nœuds du graphe sont mis à jour immédiatement **sans perdre la disposition
+    en cours**
+- **Contrôle des fichiers de labels avant import** : SONAR signale les adresses
+  MAC/IP invalides, les doublons et les conflits (même IP associée à deux MAC
+  ou deux labels différents). Chaque erreur indique le **numéro de ligne** et le
+  **contenu complet de la ligne** concernée, pour faciliter la correction.
 
 ### Placement des nœuds
 - Moteur de gravité (force-directed layout)
@@ -89,6 +101,18 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 - Visualisation et édition de la matrice importée (identique à une capture live)
 - Indicateur de chargement pendant l’import des captures volumineuses
 
+### Import et fusion de matrices de flux (CSV)
+- **Rejeu d’une matrice** exportée précédemment : rouvrir une analyse, la
+  reprendre plus tard ou la partager sans refaire de capture
+- **Import de plusieurs matrices à la fois** : les fichiers sélectionnés sont
+  **listés avant ouverture** et peuvent être effacés avant confirmation
+- **Fusion automatique** des matrices importées en une seule analyse :
+  - les flux identiques présents dans plusieurs fichiers sont **consolidés**
+  - le **nombre de paquets** et le **volume d’octets** sont additionnés
+  - la **date de dernière apparition** (`last_seen`) la plus récente est conservée
+- Les **labels portés par les matrices** importées sont appliqués lors de la
+  fusion
+
 ---
 
 ## 💾 4. Sauvegarde, export et journaux
@@ -103,11 +127,10 @@ Cette page décrit l’ensemble des fonctionnalités actuelles et prévues du lo
 
 ## ℹ️ 5. Informations et aide
 
-- Panneau **À propos** :
-  - Version de l’application
-  - Versions de build canonique (**Rust**, **Node.js**, **Deno**, **Tauri CLI**)
-  - Contact en cas d’incident
-  - Mentions légales / licence
+- Menu **À propos** (deux entrées) :
+  - **Version** : version de l’application et versions de build canonique
+    (**Rust**, **Node.js**, **Deno**, **Tauri CLI**, et **Npcap** sous Windows)
+  - **Changelog** : notes de la dernière version, embarquées dans l’application
 - Accès à la **documentation** utilisateur (guide d’utilisation, support)
 
 ---

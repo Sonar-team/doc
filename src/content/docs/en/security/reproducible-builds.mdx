@@ -1,0 +1,132 @@
+---
+title: Reproducible builds
+description: Why and how SONAR produces reproducible binaries, and how to verify it.
+sidebar:
+    order: 2
+---
+
+# 🔁 Reproducible builds
+
+Dependency pinning guarantees the build always starts from the **same
+sources**. Reproducible builds guarantee the next step: that those sources
+always produce the **same binary**. This is the property that makes a
+SolarWinds-style attack detectable.
+
+---
+
+## 🎯 Why it matters
+
+In the SolarWinds attack (2020), the source code was never modified: the implant
+was injected **during compilation**, on the build server. Code review could not
+see anything, and the binary was signed with the legitimate certificate.
+
+The only structural defense is **reproducibility**:
+
+> If two independent compilations of the same commit produce the same binary
+> **bit for bit**, then any published binary that differs from an independent
+> rebuild is **proof** of an injection.
+
+Reproducibility turns "trust us" into "verify for yourself".
+
+---
+
+## 🧩 Sources of non-determinism
+
+A naive build is not reproducible because several elements vary from one
+compilation to the next:
+
+| Source of variation | Effect on the binary |
+|---------------------|----------------------|
+| Build timestamp | different embedded dates |
+| Absolute project path | `/home/alice/...` vs `/home/bob/...` baked into the binary |
+| Compilation order / parallelism | reordered sections |
+| Linker metadata (Windows) | variable PE timestamps |
+
+SONAR neutralizes these sources at the **build entry point**, identically in CI,
+locally, and during reproducibility checks, through a shared script:
+`security/repro-env.ts`.
+
+---
+
+## 🛠 What SONAR fixes
+
+### `SOURCE_DATE_EPOCH`
+
+A **stable** timestamp is injected into the environment. Build tools that honor
+it (compilers, packagers) use it instead of "the current time", which makes
+embedded dates deterministic.
+
+### Path remapping (`--remap-path-prefix`)
+
+By default Rust bakes absolute source paths into the binary (panic messages,
+debug info). The `--remap-path-prefix` flag rewrites the project root path to a
+neutral value: **no local path leaks**, and two developers on two different
+machines get the same binary.
+
+### `/Brepro` flag (Windows / MSVC)
+
+The MSVC linker inserts a timestamp into the PE executable header by default.
+The `/Brepro` flag forces a reproducible value.
+
+---
+
+## 🔬 Reproducibility **then** trust: don't mix them
+
+A subtle but essential point: **signatures and attestations are not part of the
+reproducible binary**.
+
+- The **reproducible payload** is the **unsigned** binary.
+- **Signatures, attestations, SBOM and hashes** are added **after** the build,
+  as **detached** files.
+
+Why? Because signing a file **changes its bytes**. If we compared signed
+binaries, they would always differ (each signature is unique). So we verify
+reproducibility on the **unsigned** artifact, then layer trust on top without
+touching the payload.
+
+```
+1. Verify reproducibility of the UNSIGNED binary   ← determinism
+2. Build the binaries and native bundles
+3. Generate SHA256 hashes
+4. Generate provenance attestations
+5. Sign the artifacts (Sigstore/cosign, detached signatures)
+6. Publish hashes + signatures + attestations + SBOM
+```
+
+---
+
+## ✅ Verify it yourself
+
+### As a maintainer, before release
+
+```bash
+./security/repro-check.sh
+```
+
+The script compiles the binary **twice** and compares the SHA256 hashes. In CI,
+the `publish.yml` workflow contains a blocking job (*verify unsigned
+reproducible binary*): **publication fails** if the binary is not reproducible.
+
+### As an external auditor
+
+1. Check out the tagged commit of the release.
+2. Rebuild the binary with the same environment (`security/repro-env.ts`).
+3. Compare the resulting SHA256 with the SHA256 published in the release.
+
+A mismatch = a red flag to investigate.
+
+---
+
+## ⚠️ Known limitations
+
+- Reproducibility currently covers the **binary**, not yet all **native
+  installers** (MSI, NSIS, DEB, RPM, DMG), which embed variable metadata. Those
+  remain covered by **hash + attestation + signature**.
+- Post-release verification is still a **documented manual step**.
+
+---
+
+## See also
+
+- [Release trust](/doc/en/guides/release-trust/) — verify hash, provenance and signature
+- [Reproducibility matrix](/doc/en/guides/reproducibility-matrix/)

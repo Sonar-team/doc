@@ -1,0 +1,143 @@
+---
+title: Labels and matrix merging
+description: Label file format, resolution cascade and flow-matrix merging rules.
+sidebar:
+    order: 504
+---
+
+# Labels and matrix merging
+
+This page documents two internal SONAR mechanisms that look simple on the
+surface but rely on precise rules: **label resolution** (how a human-readable
+name is attached to a device) and **matrix merging** (how several CSV files are
+aggregated into a single analysis).
+
+---
+
+## 1. Label file format
+
+A label file is a CSV **without a mandatory header**, with at least three
+columns:
+
+```csv
+mac,ip,label
+aa:bb:cc:dd:ee:ff,192.168.1.10,web-server
+,10.0.0.1,gateway
+b8:27:eb:00:11:22,,modbus-plc
+```
+
+### Reading rules
+
+- **Expected columns:** `mac, ip, label`. Any column **beyond the third is
+  merged into the label** (useful when the label itself contains a comma, e.g.
+  `workstation, HR dept`).
+- **Empty fields allowed:** a row may provide only the MAC **or** only the IP.
+  This is what enables partial labels (see the cascade below).
+- **Optional header:** a first `mac,ip,label` line is detected automatically
+  (neither its MAC field nor its IP field is a valid address) and **discarded**
+  from the store.
+- **Empty lines ignored.**
+
+### Validation before import
+
+Before inserting anything, SONAR validates the file and **rejects the import as
+a whole** if there is a problem (no partial label is applied when the file is
+invalid). Three families of errors are reported, each with the **line number**
+and the **raw line content** to make correction easy:
+
+| Error | Trigger |
+|-------|---------|
+| `InvalidRowsFormat` | row with fewer than 3 columns |
+| `InvalidMacIpFormat` | non-empty but syntactically invalid MAC or IP |
+| `LabelLinesConflicts` | same IP mapped to two different MACs, or to two different labels |
+
+---
+
+## 2. The label resolution cascade
+
+A given device may be known by its MAC, by its IP, or by both. To find the most
+relevant label, SONAR queries the label store using a **three-level cascade**,
+from most specific to most general:
+
+```
+get_label(mac, ip):
+   1. exact key   (mac, ip)      ← MAC + IP match
+   2. else        ("", ip)       ← label attached to the IP alone
+   3. else        (mac, "")      ← label attached to the MAC alone
+   4. else        None
+```
+
+In other words:
+
+1. **Exact match** — both MAC **and** IP match: the ideal case, the label is
+   returned.
+2. **IP-only fallback** — useful for a service identified by its IP regardless
+   of the network card (e.g. a virtual IP, a gateway).
+3. **MAC-only fallback** — useful for a device tracked by its MAC regardless of
+   the IP it obtains (e.g. DHCP, roaming).
+
+> **Practical consequence.** To label a workstation whose IP changes, set the
+> MAC and leave the IP empty. To label a fixed-IP service shared by several
+> machines, set the IP and leave the MAC empty. An exact label (MAC + IP) always
+> wins over these two fallbacks.
+
+### Priority on repeated insertion
+
+Labels are stored in a table keyed by `(mac, ip)`. At **equal key, the last
+insertion wins**. This drives the import priority rule:
+
+- labels from the current store are loaded first;
+- then those carried by the imported file(s), which are therefore **prioritized**;
+- during a multi-file import, **the last file wins** over the previous ones for
+  the same key.
+
+---
+
+## 3. Merging several flow matrices
+
+When several matrix CSV files (the
+[SFMS format](/doc/reference/format/)) are imported together, SONAR **merges**
+them into a single analysis. Merging happens at two levels, with two different
+aggregation keys.
+
+### 3.1 Matrix level — flow key
+
+Each CSV row is rebuilt into a **flow key** that includes:
+
+- source and destination MAC addresses, EtherType, VLAN;
+- source and destination IP addresses;
+- source and destination ports;
+- transport protocol and application protocol.
+
+Two rows that are **identical on all these fields** — whether from the same file
+or from different files — are considered **the same flow** and merged:
+
+| Statistic | Merge rule |
+|-----------|-----------|
+| `count` (packets) | **added** |
+| `total_bytes` (bytes) | **added** (saturating, on `u64`) |
+| `last_seen` | keep the **most recent** date |
+
+> The byte counter is a `u64` precisely to absorb the addition of large volumes
+> without overflow during merging.
+
+### 3.2 Graph level — undirected key
+
+The graph uses a **coarser** key than the matrix: an edge is identified by the
+**undirected** triple `{IP_A, IP_B, protocol}` (ports are not part of the key).
+Several distinct flows at the matrix level may therefore aggregate onto a single
+edge, and if the reverse direction appears, the edge becomes
+**bidirectional**.
+
+### 3.3 Caveat
+
+Merging is **purely additive**: nothing distinguishes "same flow seen in two
+captures" from "same file imported twice". **Importing the same export twice
+therefore doubles the counters.** Double-check your file selection before
+merging.
+
+---
+
+## See also
+
+- [Flow matrix format (SFMS)](/doc/reference/format/)

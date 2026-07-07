@@ -1,0 +1,137 @@
+---
+title: État partagé et concurrence dans Tauri
+description: Comment SONAR partage son état entre commandes, et la règle d'ordre de verrouillage qui évite les interblocages.
+sidebar:
+  order: 404
+---
+
+# 🔐 État partagé et concurrence
+
+SONAR maintient plusieurs états vivants (matrice de flux, graphe, labels…) que
+**plusieurs commandes Tauri manipulent en parallèle**. Cette page explique
+comment cet état est partagé, et surtout la **règle d'ordre de verrouillage**
+qui évite une classe de bugs redoutable : l'**interblocage** (*deadlock*).
+
+C'est un sujet peu visible mais critique : un interblocage ne provoque pas
+d'erreur, il **fige silencieusement l'application**.
+
+---
+
+## 🧩 Les états gérés par Tauri
+
+Au démarrage, l'application enregistre cinq états partagés
+(`src-tauri/src/lib.rs`), chacun protégé par un `Mutex` et partagé par un `Arc` :
+
+```rust
+.manage(Arc::new(Mutex::new(CaptureState::new())))  // état de la capture
+.manage(Arc::new(Mutex::new(FlowMatrix::new())))    // matrice de flux
+.manage(Arc::new(Mutex::new(GraphData::new())))     // graphe
+.manage(Arc::new(Mutex::new(PcInfoLabel::new())))   // infos labels machine
+.manage(Arc::new(Mutex::new(LabelStore::new())))    // store de labels importés
+```
+
+- **`Arc`** (*Atomic Reference Counted*) permet de partager la même donnée entre
+  plusieurs threads.
+- **`Mutex`** garantit qu'**un seul thread à la fois** accède à la donnée : pour
+  lire ou écrire, il faut d'abord `lock()`.
+
+Une commande déclare simplement les états dont elle a besoin, et Tauri les
+injecte :
+
+```rust
+#[tauri::command(async)]
+pub fn import_matrix_files(
+    matrice: State<'_, Arc<Mutex<FlowMatrix>>>,
+    graph: State<'_, Arc<Mutex<GraphData>>>,
+    label_store: State<'_, Arc<Mutex<LabelStore>>>,
+    // ...
+) -> Result<(), CaptureStateError> { /* ... */ }
+```
+
+---
+
+## ⚠️ Le piège : l'interblocage ABBA
+
+Le problème survient dès qu'une opération a besoin de **plusieurs verrous à la
+fois**. Considérons deux commandes qui s'exécutent en parallèle (les commandes
+Tauri `async` tournent sur des threads distincts) :
+
+```
+Thread 1 (commande A)          Thread 2 (commande B)
+  lock(matrice)      ✅           lock(label_store) ✅
+  lock(label_store)  ⏳ attend     lock(matrice)     ⏳ attend
+       ▲                                ▲
+       └──────── chacun attend le verrou que l'autre détient ────────┘
+                        → blocage définitif
+```
+
+Chaque thread tient un verrou et attend celui que l'autre détient. Aucun ne
+lâchera jamais : **l'application est gelée, sans message d'erreur**. C'est ce
+qu'on appelle un interblocage **ABBA** (un thread prend A puis B, l'autre B
+puis A).
+
+---
+
+## ✅ La règle : un ordre de verrouillage unique
+
+La parade est simple mais doit être **respectée partout** : toutes les
+commandes acquièrent les verrous dans **le même ordre**. Si tout le monde prend
+A **avant** B, la situation ABBA ci-dessus ne peut plus se produire.
+
+Dans SONAR, l'ordre canonique est :
+
+```
+matrice  →  graph  →  label_store
+```
+
+Toute fonction qui a besoin de plusieurs de ces verrous les prend dans cet
+ordre. Exemple dans `import_matrix_files` :
+
+```rust
+// Même ordre de verrouillage que convert_from_pcap_list et net_capture
+// (matrice -> graph -> label_store) pour éviter un interblocage ABBA.
+let mut matrice_guard = matrice.lock().unwrap();
+let mut graph_guard = graph.lock().unwrap();
+let label_store_guard = label_store.lock().unwrap();
+```
+
+Le commentaire dans le code n'est pas décoratif : il rappelle la contrainte
+pour qu'une future modification ne réintroduise pas le bug en réordonnant les
+`lock()`.
+
+---
+
+## 🧭 Règles pratiques pour contribuer
+
+Quand vous écrivez ou modifiez une commande qui touche plusieurs états :
+
+1. **Respectez l'ordre canonique** `matrice → graph → label_store`. Si vous
+   n'avez besoin que d'un sous-ensemble, gardez l'ordre relatif (ex. `matrice`
+   avant `label_store`).
+2. **Relâchez les verrous au plus tôt.** Un verrou est libéré à la fin de la
+   portée (`drop`) de son *guard*. Limitez la portée avec un bloc `{ ... }`
+   quand vous n'avez besoin d'un état que brièvement — cela réduit la fenêtre
+   de contention.
+3. **Faites le travail coûteux hors des verrous.** Par exemple, lire et parser
+   les fichiers CSV **avant** de prendre les verrous : ainsi un fichier invalide
+   échoue sans jamais bloquer la matrice courante, et les verrous sont tenus le
+   moins longtemps possible.
+4. **Ne verrouillez pas pendant un `await`** ni pendant un appel qui pourrait
+   lui-même reverrouiller le même mutex (réentrance → blocage immédiat).
+
+---
+
+## 💡 Pourquoi ce modèle plutôt qu'un seul gros verrou ?
+
+On pourrait tout mettre derrière un unique `Mutex`. Mais des verrous séparés
+permettent à des opérations indépendantes (par ex. lire le graphe pendant qu'une
+autre tâche met à jour le store de labels) de progresser en parallèle. Le prix à
+payer est précisément cette **discipline d'ordre de verrouillage** — d'où
+l'importance de la documenter.
+
+---
+
+## Voir aussi
+
+- [Capturer des paquets réseau en Rust avec Tauri](/doc/developpement/capture/)
+- [Afficher les paquets en temps réel](/doc/developpement/logging/)

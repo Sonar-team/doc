@@ -1,0 +1,137 @@
+---
+title: Builds reproductibles
+description: Pourquoi et comment SONAR produit des binaires reproductibles, et comment le vérifier.
+sidebar:
+    order: 2
+---
+
+# 🔁 Builds reproductibles
+
+L'[épinglage des dépendances](/doc/securite/epingle/) garantit que le build
+part toujours des **mêmes sources**. Le build reproductible garantit l'étape
+suivante : que ces sources produisent **toujours le même binaire**. C'est la
+propriété qui rend une attaque de type SolarWinds détectable.
+
+---
+
+## 🎯 Pourquoi c'est important
+
+Dans l'attaque SolarWinds (2020), le code source n'a jamais été modifié :
+l'implant était injecté **pendant la compilation**, sur le serveur de build. La
+revue de code ne pouvait rien voir, et le binaire était signé avec le
+certificat légitime.
+
+La seule parade structurelle est la **reproductibilité** :
+
+> Si deux compilations indépendantes du même commit produisent le même binaire
+> **au bit près**, alors tout binaire publié qui diffère d'un rebuild
+> indépendant est la **preuve** d'une injection.
+
+La reproductibilité transforme « faites-nous confiance » en « vérifiez
+vous-même ».
+
+---
+
+## 🧩 Les sources de non-déterminisme
+
+Un build « naïf » n'est pas reproductible car plusieurs éléments varient d'une
+compilation à l'autre :
+
+| Source de variation | Conséquence dans le binaire |
+|---------------------|------------------------------|
+| Horodatage de build | dates embarquées différentes |
+| Chemin absolu du projet | `/home/alice/...` vs `/home/bob/...` gravé dans le binaire |
+| Ordre de compilation / parallélisme | sections réordonnées |
+| Métadonnées d'édition de liens (Windows) | timestamps PE variables |
+
+SONAR neutralise ces sources au **point d'entrée du build**, de façon
+identique en CI, en local et lors des contrôles de reproductibilité, via un
+script partagé : `security/repro-env.ts`.
+
+---
+
+## 🛠 Ce que SONAR fixe
+
+### `SOURCE_DATE_EPOCH`
+
+Un horodatage **stable** est injecté dans l'environnement. Les outils de build
+qui le respectent (compilateurs, empaqueteurs) l'utilisent à la place de
+« l'heure actuelle », ce qui rend les dates embarquées déterministes.
+
+### Remappage des chemins (`--remap-path-prefix`)
+
+Rust grave par défaut les chemins absolus des sources dans le binaire (messages
+de panique, debug info). Le flag `--remap-path-prefix` réécrit le chemin racine
+du projet vers une valeur neutre : **aucun chemin local ne fuit**, et deux
+développeurs sur deux machines différentes obtiennent le même binaire.
+
+### Drapeau `/Brepro` (Windows / MSVC)
+
+L'éditeur de liens MSVC insère par défaut un timestamp dans l'en-tête des
+exécutables PE. Le drapeau `/Brepro` force une valeur reproductible.
+
+---
+
+## 🔬 Reproductibilité **puis** confiance : ne pas mélanger
+
+Un point subtil mais essentiel : **la signature et l'attestation ne font pas
+partie du binaire reproductible**.
+
+- Le **payload reproductible** est le binaire **non signé**.
+- Les **signatures, attestations, SBOM et hashes** sont ajoutés **après** le
+  build, en fichiers **détachés**.
+
+Pourquoi ? Parce que signer un fichier **modifie ses octets**. Si on comparait
+des binaires signés, ils différeraient toujours (chaque signature est unique).
+On vérifie donc la reproductibilité sur l'artefact **non signé**, puis on ajoute
+la confiance par-dessus, sans toucher au payload.
+
+```
+1. Vérifier la reproductibilité du binaire NON signé   ← déterminisme
+2. Construire les binaires et bundles natifs
+3. Générer les hashes SHA256
+4. Générer les attestations de provenance
+5. Signer les artefacts (Sigstore/cosign, signatures détachées)
+6. Publier hashes + signatures + attestations + SBOM
+```
+
+---
+
+## ✅ Vérifier soi-même
+
+### En tant que mainteneur, avant release
+
+```bash
+./security/repro-check.sh
+```
+
+Le script compile **deux fois** le binaire et compare les empreintes SHA256.
+En CI, le workflow `publish.yml` contient un job bloquant
+(*verify unsigned reproducible binary*) : **la publication échoue** si le
+binaire n'est pas reproductible.
+
+### En tant qu'auditeur externe
+
+1. Récupérer le commit taggé de la release.
+2. Reconstruire le binaire avec le même environnement (`security/repro-env.ts`).
+3. Comparer le SHA256 obtenu au SHA256 publié dans la release.
+
+Un écart = un signal d'alerte à investiguer.
+
+---
+
+## ⚠️ Limites connues
+
+- La reproductibilité porte aujourd'hui sur le **binaire**, pas encore sur tous
+  les **installateurs natifs** (MSI, NSIS, DEB, RPM, DMG) qui embarquent des
+  métadonnées variables. Ceux-ci restent couverts par **hash + attestation +
+  signature**.
+- La vérification post-release reste une étape **manuelle documentée**.
+
+---
+
+## Voir aussi
+
+- [Épinglage des dépendances](/doc/securite/epingle/)
+- [Confiance release](/doc/guides/release-trust/) — vérifier hash, provenance et signature
+- [Matrice de reproductibilité](/doc/guides/reproducibility-matrix/)

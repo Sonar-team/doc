@@ -1,0 +1,66 @@
+---
+title: Changelog
+description: Version history of the SONAR application.
+---
+
+# 📝 Changelog
+
+## [4.1.0] - 2026-07-07
+
+### ✨ Improvements
+
+- Multiple CSV matrix import: several exported matrices can be selected and then merged into a single analysis.
+- Automatic merging of identical flows on import: packet count and byte volume are summed, and the most recent `last_seen` date is kept.
+- Improved matrix import panel: the selected files are listed before opening and can be cleared before import.
+- New **About** menu with separate access to the version information and the embedded changelog.
+- Display of the **Npcap** version used in the version information.
+
+### 🛠 Fixes
+
+- Enriched CSV label import errors: line number, full line and total error count, to make file correction easier.
+- Greater tolerance of label import for extra columns and empty trailing columns.
+
+### 🔧 Maintenance
+
+- Added `NPCAP_VERSION` to the build versions checked by CI.
+- Bumped the SONAR version to **4.1.0**.
+
+---
+
+## [4.0.1] - 2026-07-06
+
+### 🔧 Maintenance
+
+- Updated the embedded **Npcap** to **1.88** for the Windows bundles and the Windows smoke runtime.
+- Enabled a strict CSP on the webview.
+- Bumped the SONAR version to **4.0.1**.
+
+---
+
+## [4.0.0] - 2026-07-05
+
+### 💥 Major changes
+
+- Updated `packet_parser` to **2.0.2**: typed packets, PostgreSQL detection by payload heuristic and new application parsers.
+- Capture engine overhaul: new `graphBatch` and `stopped` IPC events, new `app_dropped` field in the `stats` event.
+
+### ✨ Improvements
+
+- Lazy-allocation buffer pool (2 KiB standard / jumbo snaplen): capture memory reduced from ~640 MiB preallocated to a few MiB depending on the real load (bench: RSS 464 → 13 MiB, throughput ×2.7).
+- Graph updates coalesced per node/edge and sent in batches, instead of one IPC event per packet.
+- Application-level drops counted (pool exhausted / channel full) and shown in the status bar (⚠️): visibility on capture completeness under heavy load.
+
+### 🛠 Fixes
+
+- The bytes of the first packet of each flow were counted once instead of twice in the matrix and the exported CSV.
+
+### 🔧 Maintenance
+
+- Removed the duplicated CLI processing thread: headless mode shares the main pipeline.
+- Bumped the SONAR version to **4.0.0**.
+
+---
+
+> **Older versions.** The full history (3.x, 2.x, 1.x) is available in the
+> [French changelog](/doc/changelog/) and in the repository's
+> [`CHANGELOG.md`](https://github.com/Sonar-team/Sonar_desktop_app/blob/main/CHANGELOG.md).

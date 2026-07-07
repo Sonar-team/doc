@@ -1,0 +1,86 @@
+---
+title: Network flow matrices
+description: Format of network flow matrices.
+sidebar:
+    order: 502
+---
+
+## 📊 Proposed new format for network flow matrices
+
+Our current flow-matrix format is as follows:
+
+> **Source MAC | Destination MAC | Interface | L3 Protocol | Source IP | Source IP Type | Destination IP | Destination IP Type | L4 Protocol | Source Port | Destination Port | L7 Protocol | Packet size | Count**
+
+However, this format mixes several logics:
+
+* It wavers between the **TCP/IP model** and the **OSI model**, without clearly choosing one.
+* Some fields are ambiguous (e.g. "Interface" or "L3 Protocol") and the column names do not always reflect the real structure of a network packet.
+
+---
+
+## 🎯 Goal
+
+Clarify and standardize the matrix format so that it:
+
+* reflects the structure of a network packet as we **actually parse it**;
+* is **understandable for analysts** and **interoperable** with other tools;
+* allows future **extension** (adding protocols, merging captures, etc.).
+
+---
+
+## ✅ Proposed new format
+
+\| Source MAC | Destination MAC | EtherType | Source IP | Source IP Type | Destination IP | Destination IP Type | Transport Protocol | Source Port | Destination Port | Application Protocol | Cumulative size | Occurrences | Last seen |
+
+#### Field description:
+
+* **Source / Destination MAC**: layer-2 address (link layer).
+* **EtherType**: value of the `ethertype` field in the Ethernet header, indicating the encapsulated protocol (e.g. IPv4, IPv6, ARP, PROFINET).
+* **Source / Destination IP**: IP addresses if present (otherwise empty).
+* **IP Type**: `Unicast`, `Broadcast`, `Multicast`, depending on the address.
+* **Transport Protocol**: TCP, UDP, ICMP (extracted from the "Protocol" field of the IPv4/IPv6 headers).
+* **Ports**: valid only for TCP/UDP, otherwise `-`.
+* **Application Protocol**: DNS, HTTP, TLS, etc., if identifiable.
+* **Cumulative size**: total bytes over this flow.
+* **Occurrences**: number of times the same flow appears.
+* **Last seen**: date and time of the last packet observed for this flow.
+
+---
+
+## ❌ Removed elements
+
+* **Interface**: not part of the flow itself (depends on the capture context).
+* **Misused OSI layers**: the "L3", "L4", "L7" columns are replaced by explicit names, based on the real source of the information (EtherType, Protocol, etc.).
+
+---
+
+## 🧠 Why put ICMP in the transport column?
+
+Even though ICMP is not a transport protocol in the OSI model, **it is
+encapsulated in IPv4 like TCP or UDP**, and parsed from the same field. From a
+practical standpoint, it makes sense to display it at the same level.
+
+---
+
+## 🧠 Why not add a "Session" column for TLS?
+
+Because SONAR does not decrypt TLS layers to access the encapsulated data. We
+display the **observable protocol**, not the intermediate logical layers that
+are not decrypted.
+
+---
+
+## 📌 Example (simplified)
+
+| Source MAC             | Destination MAC        | EtherType | Source IP    | Source IP Type | Destination IP | Destination IP Type | Transport | Src Port | Dst Port | Application | Size   | Occurrence | Last seen           |
+| ---------------------- | ---------------------- | --------- | ------------ | -------------- | -------------- | ------------------- | --------- | -------- | -------- | ----------- | ------ | ---------- | ------------------- |
+| 00:11:22:33:44:55      | FF\:FF\:FF\:FF\:FF\:FF | ARP       | -            | -              | -              | -                   | -         | -        | -        | -           | 128    | 3          | 2025-06-13 13:32:45 |
+| AA\:BB\:CC\:DD\:EE\:FF | 11:22:33:44:55:66      | IPv4      | 192.168.1.12 | Unicast        | 192.168.1.1    | Unicast             | TCP       | 443      | 52428    | TLS         | 18200  | 7          | 2025-06-13 13:32:49 |
+
+---
+
+## 🧾 Conclusion
+
+This proposal aims to clarify terminology, align with the **real structure of
+network frames**, and prepare the tool for future extensions. If you have
+feedback or additional cases to cover, we can adjust.

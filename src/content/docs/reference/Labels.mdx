@@ -1,0 +1,147 @@
+---
+title: Labels et fusion de matrices
+description: Format des fichiers de labels, cascade de résolution et règles de fusion des matrices de flux.
+sidebar:
+    order: 504
+---
+
+# Labels et fusion de matrices
+
+Cette page documente deux mécanismes internes de SONAR qui paraissent simples
+en surface mais reposent sur des règles précises : la **résolution des labels**
+(comment un nom lisible est associé à un équipement) et la **fusion de
+matrices** (comment plusieurs fichiers CSV sont agrégés en une seule analyse).
+
+---
+
+## 1. Format d'un fichier de labels
+
+Un fichier de labels est un CSV **sans en-tête obligatoire**, à trois colonnes
+minimum :
+
+```csv
+mac,ip,label
+aa:bb:cc:dd:ee:ff,192.168.1.10,serveur-web
+,10.0.0.1,passerelle
+b8:27:eb:00:11:22,,automate-modbus
+```
+
+### Règles de lecture
+
+- **Colonnes attendues :** `mac, ip, label`. Les colonnes **au-delà de la
+  troisième sont fusionnées dans le label** (utile si le label contient une
+  virgule, ex. `poste, service RH`).
+- **Champs vides autorisés :** une ligne peut ne renseigner que la MAC **ou**
+  que l'IP. C'est ce qui permet les labels partiels (voir la cascade ci-dessous).
+- **En-tête optionnel :** une première ligne `mac,ip,label` est reconnue
+  automatiquement (ni son champ MAC ni son champ IP ne sont des adresses
+  valides) et **écartée** du store.
+- **Lignes vides ignorées.**
+
+### Validation avant import
+
+Avant d'insérer quoi que ce soit, SONAR valide le fichier et **refuse l'import
+en bloc** en cas de problème (aucun label partiel n'est appliqué si le fichier
+est invalide). Trois familles d'erreurs sont remontées, chacune avec le
+**numéro de ligne** et le **contenu brut de la ligne** pour faciliter la
+correction :
+
+| Erreur | Déclencheur |
+|--------|-------------|
+| `InvalidRowsFormat` | ligne à moins de 3 colonnes |
+| `InvalidMacIpFormat` | MAC ou IP non vide mais syntaxiquement invalide |
+| `LabelLinesConflicts` | même IP associée à deux MAC différentes, ou à deux labels différents |
+
+---
+
+## 2. La cascade de résolution des labels
+
+Un même équipement peut être connu par sa MAC, par son IP, ou par les deux.
+Pour retrouver le label le plus pertinent, SONAR interroge le store de labels
+selon une **cascade à trois niveaux**, du plus précis au plus général :
+
+```
+get_label(mac, ip) :
+   1. clé exacte   (mac, ip)      ← correspondance MAC + IP
+   2. sinon        ("", ip)       ← label associé à l'IP seule
+   3. sinon        (mac, "")      ← label associé à la MAC seule
+   4. sinon        None
+```
+
+Autrement dit :
+
+1. **Correspondance exacte** — la MAC **et** l'IP correspondent : c'est le cas
+   idéal, le label est retourné.
+2. **Repli sur l'IP seule** — utile pour un service identifié par son IP quelle
+   que soit la carte réseau (ex. une IP virtuelle, une passerelle).
+3. **Repli sur la MAC seule** — utile pour un équipement suivi par sa MAC quelle
+   que soit l'IP qu'il obtient (ex. DHCP, itinérance).
+
+> **Conséquence pratique.** Pour labelliser un poste dont l'IP change, mettez
+> la MAC et laissez l'IP vide. Pour labelliser un service à IP fixe partagé par
+> plusieurs machines, mettez l'IP et laissez la MAC vide. Un label exact
+> (MAC + IP) l'emportera toujours sur ces deux replis.
+
+### Priorité en cas d'insertion multiple
+
+Les labels sont stockés dans une table indexée par la clé `(mac, ip)`. À **clé
+égale, la dernière insertion gagne**. C'est ce qui donne la règle de priorité
+lors d'un import :
+
+- les labels du store courant sont chargés en premier ;
+- puis ceux portés par le(s) fichier(s) importé(s), donc **prioritaires** ;
+- lors d'un import multi-fichiers, **le dernier fichier prime** sur les
+  précédents pour une même clé.
+
+---
+
+## 3. Fusion de plusieurs matrices de flux
+
+Lorsque plusieurs matrices CSV (format
+[SFMS](/doc/reference/format/)) sont importées ensemble, SONAR les **fusionne**
+en une seule analyse. La fusion opère à deux niveaux, avec deux clés
+d'agrégation différentes.
+
+### 3.1 Niveau matrice — clé de flux
+
+Chaque ligne CSV est reconstruite en une **clé de flux** qui inclut :
+
+- adresses MAC source et destination, EtherType, VLAN ;
+- adresses IP source et destination ;
+- ports source et destination ;
+- protocole de transport et protocole applicatif.
+
+Deux lignes **identiques sur tous ces champs** — qu'elles proviennent du même
+fichier ou de fichiers différents — sont considérées comme **le même flux** et
+fusionnées :
+
+| Statistique | Règle de fusion |
+|-------------|-----------------|
+| `count` (paquets) | **addition** |
+| `total_bytes` (octets) | **addition** (saturante, sur `u64`) |
+| `last_seen` | on conserve la **date la plus récente** |
+
+> Le compteur d'octets est un `u64` précisément pour encaisser l'addition de
+> gros volumes sans débordement lors de la fusion.
+
+### 3.2 Niveau graphe — clé non orientée
+
+Le graphe utilise une clé **plus grossière** que la matrice : une arête est
+identifiée par le couple **non orienté** `{IP_A, IP_B, protocole}` (les ports
+n'entrent pas dans la clé). Plusieurs flux distincts au sens matrice peuvent
+donc s'agréger sur une même arête, et si le sens inverse apparaît, l'arête
+passe en **bidirectionnelle**.
+
+### 3.3 Point d'attention
+
+La fusion est **purement additive** : rien ne distingue « même flux observé
+dans deux captures » de « même fichier importé deux fois ». **Réimporter deux
+fois le même export double donc les compteurs.** Vérifiez votre sélection de
+fichiers avant de lancer la fusion.
+
+---
+
+## Voir aussi
+
+- [Format des matrices de flux (SFMS)](/doc/reference/format/)
+- [Fonctionnalités — Import et labellisation](/doc/guides/fonctionalitées/)

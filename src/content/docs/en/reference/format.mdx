@@ -1,0 +1,151 @@
+---
+title: Final proposal
+description: Format of network flow matrices.
+sidebar:
+    order: 503
+---
+
+# ✅ Final proposal
+
+---
+
+# Network flow matrices
+
+## Overview
+
+SONAR represents the exchanges observed on the network as a **flow matrix**.
+Each entry corresponds to an **aggregated flow**, defined by the key attributes
+of the network packet (Ethernet → IP → Transport → Application).
+
+This format follows the **SFMS — SONAR Flow Matrix Standard**, in its **Core
+v0.2** version, designed to become an **international standard** for exchanging
+network flow matrices.
+
+---
+
+## 🎯 Goals of the standard
+
+* **Alignment** with the real structure of network frames (no ambiguous OSI/TCP-IP mixing)
+* **Interoperability** with other monitoring / SOC / IDS tools
+* **Readability** for network and cybersecurity analysts
+* **Extensibility** for future industrial and IoT protocols
+* **Normativity** to enable broad industry adoption
+
+---
+
+## ✅ SFMS Core v0.2 standard format
+
+### 📌 Mandatory columns
+
+| Source MAC | Destination MAC | EtherType | Source IP | Source IP Type | Destination IP | Destination IP Type | Transport Protocol | Source Port | Destination Port | Application Protocol | Cumulative size | Occurrences |
+| ---------- | --------------: | --------: | --------: | -------------: | -------------: | ------------------: | ------------------: | ----------: | ---------------: | -------------------: | -------------: | ----------: |
+
+**Description:**
+
+* **Source / Destination MAC**
+  Layer-2 identifiers (link layer).
+* **EtherType**
+  Type of encapsulated protocol (`IPv4`, `IPv6`, `ARP`, `VLAN`, `PROFINET`, etc.).
+* **Source / Destination IP**
+  IP addresses if available, otherwise empty.
+* **IP Type**
+  Classification (`Unicast`, `Broadcast`, `Multicast`, `Unknown`).
+* **Transport Protocol**
+  `TCP`, `UDP`, `ICMPv4`, `ICMPv6`, `None`.
+* **Ports**
+  Valid only for TCP/UDP → **empty** fields otherwise.
+* **Application Protocol**
+  Inspected without decryption (DNS, HTTP, TLS, Modbus, Unknown…).
+* **Cumulative size** (`bytes`)
+* **Occurrences** (`packets`)
+
+---
+
+## 🧩 Temporality (optional SFMS-T extension)
+
+| Last seen |
+| --------- |
+
+> Format: RFC3339 (`2025-06-13T13:32:49Z`)
+> Lets you know whether the flow was **recently active**.
+
+> **Temporality is not in the Core** → it stays optional in SFMS v0.2.
+> A future version may add `first_seen`, `window.id`, etc.
+
+---
+
+## ✅ Conformant examples
+
+| Source MAC        | Destination MAC   | EtherType | Source IP    | Source IP Type | Destination IP | Destination IP Type | Transport | Src Port | Dst Port | App     | Size   | Occurrences | Last seen            |
+| ----------------- | ----------------- | --------- | ------------ | -------------- | -------------- | ------------------- | --------- | -------: | -------: | ------- | -----: | ----------: | -------------------- |
+| 00:11:22:33:44:55 | FF:FF:FF:FF:FF:FF | ARP       |              |                |                |                     | None      |          |          | Unknown |    128 |           3 | 2025-06-13T13:32:45Z |
+| AA:BB:CC:DD:EE:FF | 11:22:33:44:55:66 | IPv4      | 192.168.1.12 | Unicast        | 192.168.1.1    | Unicast             | TCP       |      443 |    52428 | TLS     |  18200 |           7 | 2025-06-13T13:32:49Z |
+
+---
+
+## ❌ Deliberately excluded elements
+
+| Element                       | Reason                                            |
+| ----------------------------- | ------------------------------------------------- |
+| Interface                     | Depends on the capture context, not the flow      |
+| OSI numbering (L3, L4…)       | Too ambiguous — replaced by explicit fields       |
+| Payload / TLS session         | Out of scope for passive capture without decryption |
+| Internal references (VM/zone) | Should be handled via extensions (SFMS-I)         |
+
+---
+
+## 🧠 Conceptual rationale
+
+### ICMP in the Transport column?
+
+Because it is extracted from the **same "Protocol" field** as TCP/UDP in
+IPv4/IPv6.
+→ **Same information source** ⇒ same display level.
+
+### No "TLS Session" column?
+
+TLS encrypts application data.
+→ SONAR displays **the observable protocol**, not the undecrypted internal
+session.
+
+---
+
+## 🔒 Cybersecurity alignment and interoperability
+
+The model can be mapped to the **Information Elements** of the **IPFIX**
+standard used by NetFlow v9, sFlow, IDS/IPS, NDR, etc.
+
+🎯 Goal: enable the universal exchange of network flow matrices.
+
+---
+
+## 📦 Official SONAR CSV export
+
+The SONAR export follows SFMS Core v0.2 **strictly**. A validator and a JSON
+schema are provided to guarantee conformance.
+
+---
+
+## 🧩 Planned evolutions
+
+* Explicit support for industrial protocols (Modbus, Profinet)
+* Full temporal extension (`first_seen`, `window.id`)
+* **IETF (Internet-Draft)** standardization proposal
+
+> SONAR sets the **normative foundation** that can be adopted by the Cyber & OT
+> community.
+
+---
+
+## 🧾 Conclusion
+
+This format clarifies the network flow matrix and makes it:
+
+✅ Standardized
+✅ Interoperable
+✅ Durable
+✅ Context-independent
+✅ Aligned with the network and cyber industry
+
+> The goal is for SONAR to become **the reference** for representing and
+> exchanging network flow matrices.
