@@ -98,6 +98,7 @@ export default defineConfig({
     }),
     starlight({
       title: "Sonar",
+      favicon: "/assets/icon.png",
       pagination: false,
       description: "Surveillance Optimisée des Nœuds pour Analyse Réseau",
       locales: {
