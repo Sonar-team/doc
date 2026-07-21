@@ -99,6 +99,15 @@ export default defineConfig({
     starlight({
       title: "Sonar",
       favicon: "/assets/icon.png",
+      head: [
+        {
+          tag: "meta",
+          attrs: {
+            name: "google-site-verification",
+            content: "SOpzvzqZiDwmP3Olc31G41Uk-1Bi2bNrB6MuscMJpwc",
+          },
+        },
+      ],
       pagination: false,
       description: "Surveillance Optimisée des Nœuds pour Analyse Réseau",
       locales: {
